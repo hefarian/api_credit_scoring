@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+#Divers
+greg/*.sh
+greg/*.bat
+greg/*.md
+greg/*.txt
+greg/*.pdf
+greg/*.docx
+greg/*.doc
+greg/*.xls
+greg/*.xlsx
+greg/*.csv
+
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Modèles
+models/*.pkl
+models/*.joblib
+models/*.h5
+
+# Données
+data/*.csv
+data/*.zip
+!data/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

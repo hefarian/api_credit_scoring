@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv
+env
+.venv
+
+# Jupyter
+.ipynb_checkpoints
+
+# MLflow (sera monté en volume)
+mlruns/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentation (optionnel, peut être exclu pour alléger)
+# *.md
+
+# Docker (ne pas exclure - utilisés pour le build)
