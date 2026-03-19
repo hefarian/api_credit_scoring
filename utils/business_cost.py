@@ -43,8 +43,18 @@ def calculate_business_cost(y_true, y_pred, cost_fn=10, cost_fp=1):
     """
     # Calculer la matrice de confusion
     # confusion_matrix() retourne une matrice 2x2 : [[TN, FP], [FN, TP]]
+    # sauf si une classe est manquante (1x1)
     # .ravel() transforme la matrice en tableau 1D : [TN, FP, FN, TP]
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    cm = confusion_matrix(y_true, y_pred)
+    if cm.size == 1:
+        # Cas edge: une seule classe trouvée (toutes les prédictions sont 0 ou 1)
+        tn = int(cm[0, 0]) if y_true[0] == 0 else 0
+        fp = 0
+        fn = 0
+        tp = int(cm[0, 0]) if y_true[0] == 1 else 0
+    else:
+        # Cas normal: confusion matrix 2x2
+        tn, fp, fn, tp = cm.ravel()
     
     # Calculer le coût total métier
     # Formule : coût = (nombre de FN × coût d'un FN) + (nombre de FP × coût d'un FP)
@@ -141,8 +151,12 @@ def find_optimal_threshold(y_true, y_proba, cost_fn=10, cost_fp=1, thresholds=No
     # Récupérer le coût minimal associé
     min_cost = costs[optimal_threshold]
     
-    # Retourner le seuil optimal, le coût minimal, et le dictionnaire complet des coûts
-    return optimal_threshold, min_cost, costs
+    # Retourner un dict avec le seuil optimal et le coût minimal
+    return {
+        'threshold': optimal_threshold,
+        'min_cost': min_cost,
+        'costs': costs
+    }
 
 
 def business_score(y_true, y_proba, cost_fn=10, cost_fp=1):
@@ -171,8 +185,10 @@ def business_score(y_true, y_proba, cost_fn=10, cost_fp=1):
         Seuil optimal utilise
     """
     # Trouver le seuil optimal et le coût minimal
-    # _ : on ignore le dictionnaire des coûts (3ème valeur retournée)
-    optimal_threshold, min_cost, _ = find_optimal_threshold(y_true, y_proba, cost_fn, cost_fp)
+    # find_optimal_threshold retourne un dict avec les resultats
+    result = find_optimal_threshold(y_true, y_proba, cost_fn, cost_fp)
+    optimal_threshold = result['threshold']
+    min_cost = result['min_cost']
     
     # Calculer le score métier (inverse du coût)
     # On utilise le signe négatif pour que maximiser le score = minimiser le coût

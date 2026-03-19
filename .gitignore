@@ -9,16 +9,7 @@ env/
 ENV/
 
 #Divers
-greg/*.sh
-greg/*.bat
-greg/*.md
-greg/*.txt
-greg/*.pdf
-greg/*.docx
-greg/*.doc
-greg/*.xls
-greg/*.xlsx
-greg/*.csv
+greg/
 
 
 # Jupyter Notebook

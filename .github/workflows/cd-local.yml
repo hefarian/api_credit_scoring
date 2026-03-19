@@ -1,0 +1,82 @@
+name: CD Local
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Environment to deploy
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+
+concurrency:
+  group: cd-local-${{ github.event.workflow_run.head_branch || inputs.target }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
+
+      - name: Resolve target environment
+        id: target
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "value=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event.workflow_run.head_branch }}" == "main" ]]; then
+            echo "value=prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve Portainer webhook
+        id: webhook
+        shell: bash
+        env:
+          DEV_WEBHOOK: ${{ secrets.PORTAINER_WEBHOOK_URL_DEV }}
+          PROD_WEBHOOK: ${{ secrets.PORTAINER_WEBHOOK_URL_PROD }}
+        run: |
+          if [[ "${{ steps.target.outputs.value }}" == "prod" ]]; then
+            echo "value=${PROD_WEBHOOK}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${DEV_WEBHOOK}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ensure deploy script is executable
+        run: chmod +x scripts/deploy_local.sh
+
+      - name: Validate Docker availability
+        run: |
+          docker --version
+          if docker compose version >/dev/null 2>&1; then
+            docker compose version
+          else
+            docker-compose --version
+          fi
+
+      - name: Deploy stack locally
+        env:
+          TARGET_ENV: ${{ steps.target.outputs.value }}
+          PORTAINER_WEBHOOK_URL: ${{ steps.webhook.outputs.value }}
+        run: ./scripts/deploy_local.sh "$TARGET_ENV"
+
+      - name: Show deployed services
+        run: |
+          if docker compose version >/dev/null 2>&1; then
+            docker compose ps
+          else
+            docker-compose ps
+          fi

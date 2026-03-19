@@ -1,121 +1,335 @@
-# Projet 06 - Scoring Credit : Pret a depenser
+# Projet 08 - Scoring Credit : Pret a depenser
 
 **Auteur :** Gregory CRESPIN  
-**Date :** 30/01/2026  
-**Version :** 1.0
+**Date :** 06/03/2026  
+**Version :** 2.0 (Production)
 
 ---
 
 ## Description du projet
 
-Ce projet consiste a developper un outil de **scoring credit** pour la societe financiere "Pret a depenser". L'objectif est de calculer la probabilite qu'un client rembourse son credit et de classifier les demandes en credit accorde ou refuse.
+Ce projet implemente l'infrastructure de **production** pour un outil de **scoring credit** destiné à la societe financiere "Pret a depenser". Le modele XGBoost predit la probabilite qu'un client rembourse son credit et permet de classifier les demandes en credit accorde ou refuse.
 
-## Objectifs
+L'infrastructure inclut :
+- **API REST** pour les predictions en temps reel
+- **Monitoring** pour la detection de drift et l'alerte
+- **Dashboard Jupyter** pour le suivi des performances
+- **Orchestration Docker** pour le deploiement
 
-1. **Construire et optimiser un modele de scoring** qui predit la probabilite de faillite d'un client
-2. **Analyser l'importance des features** (globale et locale) pour la transparence du modele
-3. **Mettre en oeuvre une approche MLOps** complete avec MLflow :
-   - Tracking des experimentations
-   - Interface web MLflow
-   - Model registry
-   - Model serving
-
-## Structure du projet
+## Arquitechture
 
 ```
-PROJET06/
+PROJET08/
 ├── Dockerfile                   # Image Docker (Jupyter + dependances)
-├── docker-compose.yml           # Orchestration (Jupyter, option MLflow)
+├── Dockerfile.api               # Image Docker pour l'API FastAPI
+├── docker-compose.yml           # Orchestration (Jupyter, MLflow optionnel)
 ├── .dockerignore                # Fichiers exclus du contexte Docker
-├── DOCKER.md                    # Documentation lancement Docker
-├── data/                        # Donnees brutes
-├── notebooks/                   # Notebooks Jupyter
-│   ├── 01_exploration.ipynb
-│   ├── 02_preparation.ipynb
-│   ├── 03_entrainement2.ipynb
-│   └── 04_optimisation.ipynb
-├── src/                         # Modules Python reutilisables
-│   ├── data_loader.py           # Module pour charger et fusionner les donnees du projet Scoring Credit.
-│   ├── preprocessing.py         # Module pour le preprocessing (normalisation) des donnees.
-│   ├── feature_engineering.py   # Module pour le feature engineering (creation de nouvelles variables).
-│   └── metrics.py               # Module pour les metriques d'evaluation des modeles.
+├── data/                        # Donnees brutes et preparees
+├── notebooks/
+│   └── 05_deployment_and_monitoring.ipynb  # Dashboard de suivi production
+├── src/                         # Modules Python
+│   ├── api.py                   # API FastAPI pour les predictions
+│   ├── inference.py             # Logique d'inference du modele
+│   ├── monitoring.py            # Suivi des performances et drift
+│   ├── data_loader.py           # Chargement des donnees
+│   ├── preprocessing.py         # Preprocessing des donnees
+│   ├── feature_engineering.py   # Feature engineering
+│   └── metrics.py               # Metriques d'evaluation
 ├── utils/                       # Utilitaires
-│   ├── business_cost.py         # Module pour calculer le cout metier personnalise.
-│   └── feature_importance.py    # Module pour analyser l'importance des features (globale et locale).
-├── models/                      # Modeles sauvegardes
-├── mlruns/                      # Runs MLflow (genere automatiquement)
+│   ├── business_cost.py         # Calcul du cout metier personnalise
+│   └── feature_importance.py    # Analyse d'importance des features
+├── models/                      # Modeles de production
+│   ├── best_model_xgb.pkl       # Modele XGBoost retenu
+│   └── optimal_threshold_xgb.json
+├── tests/                       # Tests unitaires
+├── mlruns/                      # Runs MLflow (historique)
+├── README.md                    # Documentation
 └── requirements.txt
 ```
 
-## Installation
+## Démarrage rapide
 
-### Option 1 : Docker (recommandé)
+### Option 1 : Docker Complet (recommandé - Tous les services)
+
 ```bash
+# Construire et lancer l'environnement complet
 docker-compose up --build
 ```
-Puis ouvrir http://localhost:8888 (token : `greg2026`).
 
-Pour lancer aussi MLflow UI : `docker-compose --profile mlflow up --build`
+✅ Vous aurez accès à **5 interfaces** :
 
-Voir [DOCKER.md](DOCKER.md) pour plus de details.
+| URL | Service | Description | Port |
+|-----|---------|-------------|------|
+| **http://localhost:8000** | 🌐 **FastAPI** | API REST - Documentation Swagger | 8000 |
+| **http://localhost:8000/docs** | 📖 Swagger UI | Tester les endpoints API | 8000 |
+| **http://localhost:8501** | 📊 **Streamlit** | Dashboard monitoring en temps réel | 8501 |
+| **http://localhost:8888** | 📓 Jupyter Lab | Notebook avancé (token: `greg2026`) | 8888 |
 
-### Option 2 : Installation locale
-1. Creer un environnement virtuel :
+**MLflow UI** (optionnel - historique des expériences) :
 ```bash
+docker-compose --profile mlflow up --build
+# MLflow : http://localhost:5000
+```
+
+### Option 2 : Services spécifiques uniquement
+
+**Juste l'API** :
+```bash
+docker-compose up api
+```
+
+**API + Dashboard Streamlit** :
+```bash
+docker-compose up api streamlit
+```
+
+## CD local avec GitHub Actions
+
+Le projet peut être déployé automatiquement sur votre VM VirtualBox via un runner GitHub Actions auto-hébergé.
+
+Principe retenu :
+- `dev` déploie un stack local de développement
+- `main` déploie un stack local de production
+- les deux stacks peuvent coexister car les noms de conteneurs et ports sont paramétrés
+- Portainer reste optionnel : si un webhook est configuré, il est appelé après le déploiement
+
+### 1. Installer un runner self-hosted sur la VM
+
+Depuis GitHub : `Settings > Actions > Runners > New self-hosted runner`
+
+Sur la VM Linux, installer le runner puis l'enregistrer avec au minimum les labels :
+```bash
+self-hosted,linux
+```
+
+Le runner doit avoir accès à Docker et au dépôt.
+
+### 2. Secrets GitHub recommandés
+
+Dans `Settings > Secrets and variables > Actions`, ajouter si nécessaire :
+
+- `PORTAINER_WEBHOOK_URL_DEV`
+- `PORTAINER_WEBHOOK_URL_PROD`
+
+Ces secrets sont optionnels. Si absents, le déploiement se fait directement par `docker compose` sans notification Portainer.
+
+### 3. Déclenchement du CD
+
+- push sur `dev` : déploiement `dev`
+- push sur `main` : déploiement `prod`
+- exécution manuelle possible via l'action `CD Local`
+
+### 4. Ports par environnement
+
+Production :
+- API : `8000`
+- Streamlit : `8501`
+- Jupyter : `8888`
+- PostgreSQL : `5432`
+
+Développement :
+- API : `8001`
+- Streamlit : `8502`
+- Jupyter : `8889`
+- PostgreSQL : `5433`
+
+### 5. Fichiers impliqués
+
+- `.github/workflows/ci.yml` : CI sur `main` et `dev`
+- `.github/workflows/cd-local.yml` : déploiement local sur runner self-hosted
+- `scripts/deploy_local.sh` : script de déploiement branch-aware
+- `docker-compose.yml` : noms/ports paramétrables par environnement
+- `GUIDE_DEPLOIEMENT_VM.md` : tutoriel complet VM + Git + commandes
+
+
+
+### Option 3 : Installation locale
+
+```bash
+# 1. Créer un environnement virtuel
 python -m venv venv
 source venv/bin/activate  # Sur Windows: venv\Scripts\activate
-```
 
-2. Installer les dependances :
-```bash
+# 2. Installer les dépendances
 pip install -r requirements.txt
+
+# 3. Lancer l'API
+uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
+
+# 4. Dans d'autres terminaux :
+# - Dashboard Streamlit
+streamlit run dashboard_streamlit.py
+
+# - Interface Gradio
+python app_gradio.py
+
+# - Jupyter
+jupyter lab
 ```
 
-3. Lancer Jupyter :
-```bash
+# 4. Dans un autre terminal, lancer Jupyter
 jupyter notebook
 ```
 
+## 📊 Dashboards & Interfaces
+
+### 1. Streamlit - Dashboard de Monitoring (Port 8501)
+
+**Accédez à :** http://localhost:8501
+
+Dashboard interactif pour :
+- 📈 **KPIs en temps réel** : Total prédictions, scores moyens, distribution
+- 🚨 **Détection de drift** : Alerte automatique si dérive détectée
+- 📋 **Historique** : Visualiser et filtrer les prédictions passées
+- 📉 **Graphiques interactifs** : Tendances, distributions, latence
+
+**Fonctionnalités** :
+- ✅ Auto-refresh chaque 5 secondes
+- ✅ Téléchargement des données en CSV
+- ✅ Multi-pages (Dashboard, Drift, Historique, À propos)
+- ✅ Responsive design
+
+**Fichier source :** [dashboard_streamlit.py](dashboard_streamlit.py)
+
+---
+
+### 2. Jupyter Notebook - Dashboard Avancé (Port 8888)
+
+**Accédez à :** http://localhost:8888
+
+Notebook complet pour :
+- 🔬 **Analyse approfondie** : Explorations personnalisées
+- 📊 **Visualisations avancées** : Matplotlib, Seaborn, Plotly
+- 🧮 **Calculs personnalisés** : Modification du code à la volée
+- 📝 **Documentation** : Explications et notes
+
+**Token :** `greg2026`
+
+**Fichier :** [notebooks/05_deployment_and_monitoring.ipynb](notebooks/05_deployment_and_monitoring.ipynb)
+
+---
+
+## API REST
+
+L'API de scoring est contenue dans [src/api.py](src/api.py) et expose :
+
+- `GET /health` : État de santé du service
+- `GET /notebook?password=greg2026` : 📖 Dashboard de monitoring (Notebook 5) dans Jupyter Lab
+- `GET /monitor?password=greg2026` : Dashboard HTML des statistiques et drift
+- `POST /predict` : Prediction de scoring credit (single client)
+  - Input: `{"data": {...}}` avec les features necessaires
+  - Output: Score de probabilite de défaut
+- `POST /multipredict` : Predictions batch (jusqu'à 50 clients)
+
+### Documentation interactive
+
+FastAPI fournit une documentation interactive **automatique** :
+
+| URL | Description |
+|-----|-------------|
+| **`http://localhost:8000/docs`** | 📖 Swagger UI (interactif - tester les endpoints) |
+| **`http://localhost:8000/redoc`** | 📋 ReDoc (documentation lisible) |
+
+Vous pouvez **tester directement** les endpoints dans Swagger !
+
+### Accès rapide aux dashboards
+
+**Monitoring Dashboard (HTML)** :
+```
+http://localhost:8000/monitor?password=greg2026
+```
+
+**Notebook 5 (Jupyter Lab)** - via redirection API :
+```
+http://localhost:8000/notebook?password=greg2026
+```
+
+**Jupyter Lab direct** (sans passer par l'API) :
+```
+http://localhost:8888 (token : greg2026)
+```
+
+### Exemples
+
+**Command line - Health check :**
+```bash
+curl http://localhost:8000/health
+```
+
+**Command line - Prédiction single :**
+```bash
+curl -X POST "http://localhost:8000/predict" \
+  -H "Content-Type: application/json" \
+  -d '{"data": {"feature1": 100, "feature2": 25, ...}}'
+```
+
+**PowerShell - Prédiction single :**
+```powershell
+$payload = @{
+    data = @{
+        SK_ID_CURR = 100002
+        AMT_INCOME_TOTAL = 300000
+        # ... autres colonnes
+    }
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8000/predict" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body $payload
+```
+
+  "logs_size_kb": 156.23
+}
+```
+
+### Localisation des archives
+
+Les fichiers archivés sont stockés dans le dossier `logs/` aux côtés du fichier principal :
+
+```
+logs/
+├── api.log                            # Log actif
+├── api.log.dat_20260308_095630        # Archive 1
+├── api.log.dat_20260308_100145        # Archive 2
+└── api.log.dat_20260308_105200        # Archive 3
+```
+
+### Sécurité
+
+- ✅ Endpoint protégé par mot de passe (`password=greg2026`)
+- ✅ Pas de dépendance externe (pas d'email)
+- ✅ Archives horodatées (impossible de perdre de données)
+
 ## Donnees
 
-Les donnees sont disponibles dans le dossier `data/` :
+Les donnees de production sont dans `data/` :
+- `X_train_prepared.csv` / `X_test_prepared.csv` : Features preparees et normalisees
+- `y_train_prepared.csv` : Labels d'entrainement
+
+Les donnees brutes initiales (archives dans `greg/`) incluaient :
 - `application_train.csv` / `application_test.csv` : Donnees principales
 - `bureau.csv` / `bureau_balance.csv` : Donnees d'autres institutions
 - `previous_application.csv` : Demandes precedentes
-- `POS_CASH_balance.csv` : Historique POS/CASH
-- `credit_card_balance.csv` : Historique cartes de credit
-- `installments_payments.csv` : Historique de remboursements
+- Autres sources (POS, cartes credit, remboursements...)
 
-## Fonctionnalites cles
+## Modele et Performance
 
-### Gestion du desequilibre des classes
-- Utilisation de `class_weight` ou SMOTE
-- Metriques adaptees (AUC-ROC, Recall, F1-score)
+### Modele retenu
+- **XGBoost** - Meilleure performance globale
+- **Seuil optimal** : Défini par optimisation du cout metier personnalisé
+- **Metriques** : AUC-ROC, Recall, F1-score adapte au desequilibre des classes
 
-### Cout metier personnalise
-- Cout FN (faux negatif) = 10 x cout FP (faux positif)
-- Optimisation du seuil de decision base sur le cout metier
-- Score metier personnalise pour comparer les modeles
+### Suivi de la performance
+- Dashboard Jupyter : [notebooks/05_deployment_and_monitoring.ipynb](notebooks/05_deployment_and_monitoring.ipynb)
+- MLflow (optionnel) : Historique complet des experiments
+- Monitoring automatique : Detection de drift des features et des predictions
 
-### MLOps avec MLflow
-- Tracking automatique des experimentations
-- Enregistrement des modeles dans le registry
-- Interface web pour visualiser les runs
-- Model serving pour la production
+## Tests
 
-### Optimisation
-- Optuna pour les hyperparametres
-- Validation croisee stratifiee (StratifiedKFold)
-- Optimisation du seuil de classification
+Tests unitaires dans `tests/` :
+```bash
+pytest -q
+```
 
-## Etapes du projet
-
-1. **Exploration des donnees** : Analyse des donnees brutes, valeurs manquantes, distributions
-2. **Preparation des donnees** : Nettoyage, fusion, encodage, feature engineering
-3. **Entrainement** : Test de plusieurs modeles avec validation croisee et MLflow
-4. **Optimisation** : Hyperparametres et seuil metier optimaux
-
-## References
-
-- [Kaggle - Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk)
-- Kernels Kaggle recommandes pour l'exploration et le feature engineering
+Tests automatiques lors de chaque deployment (CI/CD via GitHub Actions).

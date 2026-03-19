@@ -1,0 +1,29 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Installer les dépendances système
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copier requirements et installer les dépendances Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copier le code source
+COPY . .
+
+# Configuration Streamlit
+RUN mkdir -p ~/.streamlit && \
+    echo "[server]\n\
+headless = true\n\
+port = 8501\n\
+enableCORS = false\n\
+[client]\n\
+showErrorDetails = true" > ~/.streamlit/config.toml
+
+# Commande de démarrage
+CMD ["streamlit", "run", "dashboard_streamlit.py", "--server.port=8501", "--server.address=0.0.0.0"]

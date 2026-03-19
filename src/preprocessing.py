@@ -66,6 +66,12 @@ def scale_features(X_train, X_test=None, method='standard'):
         # Si la méthode n'est pas reconnue, lever une erreur
         raise ValueError("method doit etre 'standard' ou 'minmax'")
     
+    # Verifier si il y a des NaN dans les donnees
+    # sklearn StandardScaler et MinMaxScaler n'acceptent pas les NaN
+    if X_train.isnull().any().any():
+        # S'il y a des NaN, lever une erreur (c'est au caller de les traiter)
+        raise ValueError("Les donnees contiennent des NaN. Veuillez les traiter avant normalisation.")
+    
     # fit_transform sur le train : apprend les parametres ET transforme
     # fit_transform() fait deux choses :
     # 1. fit() : calcule la moyenne et l'écart-type (ou min/max) sur les données d'entraînement

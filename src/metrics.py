@@ -77,7 +77,7 @@ def evaluate_model(y_true, y_pred, y_proba=None, cost_fn=10, cost_fp=1):
     # F1-score : moyenne harmonique de précision et rappel
     # Formule : 2 * (precision * recall) / (precision + recall)
     # Utile pour équilibrer précision et rappel
-    metrics['f1_score'] = f1_score(y_true, y_pred, zero_division=0)
+    metrics['f1'] = f1_score(y_true, y_pred, zero_division=0)
     
     # AUC-PR : adapte aux populations desequilibrees (ex. 8% classe positive)
     # AUC-PR (Area Under Precision-Recall Curve) est meilleur que AUC-ROC pour les classes déséquilibrées
@@ -86,18 +86,30 @@ def evaluate_model(y_true, y_pred, y_proba=None, cost_fn=10, cost_fp=1):
         metrics['auc_pr'] = average_precision_score(y_true, y_proba)
     
     # Matrice de confusion : TN, FP, FN, TP
-    # confusion_matrix() retourne une matrice 2x2
-    # .ravel() transforme la matrice en tableau 1D : [TN, FP, FN, TP]
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    # Stocker chaque composante dans le dictionnaire
-    # TN (True Negative) : bons clients prédits bons
-    metrics['tn'] = int(tn)
-    # FP (False Positive) : bons clients prédits mauvais (erreur de type I)
-    metrics['fp'] = int(fp)
-    # FN (False Negative) : mauvais clients prédits bons (erreur de type II) - la plus coûteuse !
-    metrics['fn'] = int(fn)
-    # TP (True Positive) : mauvais clients prédits mauvais
-    metrics['tp'] = int(tp)
+    # confusion_matrix() retourne une matrice 2x2, sauf si une classe est manquante (1x1)
+    # .ravel() transforme la matrice en tableau 1D
+    cm = confusion_matrix(y_true, y_pred)
+    if cm.size == 1:
+        # Cas edge: une seule classe trouvée (toutes les prédictions sont 0 ou 1)
+        if y_true[0] == y_pred[0]:
+            # Cas: tous sont corrects
+            metrics['tn'] = int(cm[0, 0]) if cm.shape == (1, 1) and y_true[0] == 0 else 0
+            metrics['fp'] = 0
+            metrics['fn'] = 0
+            metrics['tp'] = int(cm[0, 0]) if cm.shape == (1, 1) and y_true[0] == 1 else 0
+        else:
+            # Cas: tous sont incorrects
+            metrics['tn'] = 0
+            metrics['fp'] = int(cm[0, 0]) if y_true[0] == 0 else 0
+            metrics['fn'] = int(cm[0, 0]) if y_true[0] == 1 else 0
+            metrics['tp'] = 0
+    else:
+        # Cas normal: confusion matrix 2x2
+        tn, fp, fn, tp = cm.ravel()
+        metrics['tn'] = int(tn)
+        metrics['fp'] = int(fp)
+        metrics['fn'] = int(fn)
+        metrics['tp'] = int(tp)
     
     # Cout metier : FN*10 + FP*1
     # Calcule le coût total en fonction des erreurs de prédiction
@@ -108,12 +120,11 @@ def evaluate_model(y_true, y_pred, y_proba=None, cost_fn=10, cost_fp=1):
     # Le seuil optimal n'est pas forcément 0.5, il dépend du coût métier
     if y_proba is not None:
         # Trouver le seuil qui minimise le coût métier
-        # optimal_threshold : seuil optimal (ex: 0.3 au lieu de 0.5)
-        # min_cost : coût minimal obtenu avec ce seuil
-        # _ : dictionnaire des coûts pour tous les seuils testés (on l'ignore avec _)
-        optimal_threshold, min_cost, _ = find_optimal_threshold(
-            y_true, y_proba, cost_fn, cost_fp
-        )
+        # find_optimal_threshold retourne un dict avec 'threshold', 'min_cost', 'costs'
+        result = find_optimal_threshold(y_true, y_proba, cost_fn, cost_fp)
+        optimal_threshold = result['threshold']
+        min_cost = result['min_cost']
+        
         # Stocker le seuil optimal
         metrics['optimal_threshold'] = optimal_threshold
         # Stocker le coût minimal

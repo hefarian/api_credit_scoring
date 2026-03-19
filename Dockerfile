@@ -30,5 +30,5 @@ COPY . .
 # 5000 : MLflow UI
 EXPOSE 8888 5000
 
-# Démarrer Jupyter par défaut
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+# Démarrer Jupyter par défaut avec mot de passe fixe
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password='greg2026'"]

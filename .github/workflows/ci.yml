@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: credit_scoring
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: run pytest
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/credit_scoring
+        run: |
+          pytest -q
+
+  build-docker:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: log in to DockerHub
+        if: github.event_name == 'push'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: build API image
+        run: |
+          docker build -f Dockerfile.api -t pret-a-depenser/api:latest .
+      - name: build Streamlit image
+        run: |
+          docker build -f Dockerfile.streamlit -t pret-a-depenser/streamlit:latest .
+      # Uncomment the following lines to push the images to a registry
+      #- name: push API image
+      #  run: docker push pret-a-depenser/api:latest
+      #- name: push Streamlit image
+      #  run: docker push pret-a-depenser/streamlit:latest
+
+  compose-test:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: test docker-compose configuration
+        run: |
+          docker-compose config
+      - name: check PostgreSQL init script
+        run: |
+          test -f db/init.sql && echo "PostgreSQL init script found"
