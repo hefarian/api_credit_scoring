@@ -7,7 +7,10 @@ jobs:
   deploy:
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: checkout LFS objects
+        run: |
+          git lfs pull
       - name: Backup Database
         run: docker exec main_credit_scoring_postgres pg_dump -U appuser -d appuser > backup_$(date +%s).sql
       - name: Deploy MAIN

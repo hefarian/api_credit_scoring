@@ -30,6 +30,9 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: checkout LFS objects
+        run: |
+          git lfs pull
       - name: set up Python
         uses: actions/setup-python@v5
         with:

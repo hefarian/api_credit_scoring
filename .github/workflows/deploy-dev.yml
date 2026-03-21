@@ -7,7 +7,10 @@ jobs:
   deploy:
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: checkout LFS objects
+        run: |
+          git lfs pull
       - name: Deploy DEV
         run: |
           cd /home/runner/work/api_credit_scoring/api_credit_scoring
