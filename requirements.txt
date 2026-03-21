@@ -31,6 +31,7 @@ pytest==7.4.3
 pytest-cov==4.1.0
 coverage==7.3.2
 requests==2.32.4
+httpx==0.25.2
 psutil==6.1.1
 
 # Monitoring / drift detection

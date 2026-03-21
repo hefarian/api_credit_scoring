@@ -100,14 +100,73 @@ def sample_dataframe_with_nan():
 
 
 @pytest.fixture
-def api_client():
+def mock_model():
+    """
+    Fixture: Mock du modèle pour les tests en CI/CD.
+    
+    Retourne un objet mock qui simule un modèle sklearn avec une méthode
+    predict_proba() retournant des probabilités réalistes.
+    """
+    from unittest import mock
+    
+    mock_model = mock.MagicMock()
+    # Simuler predict_proba pour retourner [[prob_default, prob_no_default]]
+    # où prob_default est entre 0 et 1
+    mock_model.predict_proba.return_value = [[0.25, 0.75]]  # 25% de défaut
+    mock_model.predict.return_value = [0]  # Classe binaire
+    return mock_model
+
+
+@pytest.fixture(autouse=True)
+def patch_model_if_missing(mock_model, monkeypatch):
+    """
+    Fixture autouse: Patch le modèle globalement si best_model.pkl n'existe pas.
+    
+    Cette fixture s'exécute avant chaque test et patche :
+    - src.api.model
+    - src.inference._model
+    
+    Cela résout les problèmes en CI/CD où les fichiers modèles ne sont pas disponibles.
+    """
+    model_path = Path(__file__).parent.parent / "models" / "best_model.pkl"
+    
+    if not model_path.exists():
+        # Patcher src.api.model
+        try:
+            import src.api
+            monkeypatch.setattr(src.api, "model", mock_model)
+        except Exception:
+            pass
+        
+        # Patcher src.inference._model
+        try:
+            import src.inference
+            monkeypatch.setattr(src.inference, "_model", mock_model)
+        except Exception:
+            pass
+
+
+@pytest.fixture
+def api_client(mock_model, monkeypatch):
     """
     Fixture: Client HTTP pour tester l'API FastAPI.
     
     Contourne l'incompatibilité Starlette 0.27 + httpx 0.28 en utilisant
     httpx.Client avec un wrapper ASGI personnalisé.
+    
+    Patch également le modèle en CI/CD si best_model.pkl n'existe pas.
     """
     import httpx
+    from pathlib import Path as PathlibPath
+    
+    # Vérifier si le modèle existe
+    model_path = PathlibPath(__file__).parent.parent / "models" / "best_model.pkl"
+    
+    # Si le modèle n'existe pas (CI/CD), patcher src.api.model avec le mock
+    if not model_path.exists():
+        import src.api
+        monkeypatch.setattr(src.api, "model", mock_model)
+    
     from src.api import app
     
     # Créer un transport ASGI personnalisé
