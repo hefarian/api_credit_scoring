@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@v4
       - name: test docker-compose configuration
         run: |
-          docker-compose config
+          docker compose config
       - name: check PostgreSQL init script
         run: |
           test -f db/init.sql && echo "PostgreSQL init script found"
