@@ -61,6 +61,7 @@ from math import ceil
 from pathlib import Path
 import json
 import logging
+import os
 
 # Import des fonctions de monitoring (récupère les données de PostgreSQL)
 from src.monitoring_pg import (
@@ -381,7 +382,22 @@ st.markdown("""
 # HEADER - TITRE PRINCIPAL
 # ============================================================================
 # st.title() = affiche un titre principal (h1 en HTML)
-st.title("Dashboard de Monitoring - Scoring Credit")
+
+# Récupérer les variables d'environnement pour l'instance du dashboard
+environment_name = os.getenv("ENVIRONMENT_NAME", "DEV LOCAL")
+environment_color = os.getenv("ENVIRONMENT_COLOR", "#FF0000")
+
+# Afficher le titre avec la couleur de l'environnement
+title_html = f"""
+<h1 style="color: {environment_color}; margin-bottom: 0;">
+    Dashboard de Monitoring - Scoring Credit
+    <span style="font-size: 0.7em; margin-left: 1rem; background: {environment_color}; color: white; padding: 0.3rem 0.8rem; border-radius: 0.3rem;">
+        {environment_name}
+    </span>
+</h1>
+"""
+st.markdown(title_html, unsafe_allow_html=True)
+
 # st.markdown() = affiche du texte formaté (markdown = format simple)
 st.markdown("Suivi en temps réel du modèle XGBoost")
 

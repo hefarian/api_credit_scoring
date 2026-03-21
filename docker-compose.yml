@@ -54,6 +54,8 @@ services:
     environment:
       - GIT_PYTHON_REFRESH=quiet
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5435/${POSTGRES_DB:-credit_scoring}
+      - ENVIRONMENT_NAME=${ENVIRONMENT_NAME:-DEV LOCAL}
+      - ENVIRONMENT_COLOR=${ENVIRONMENT_COLOR:-#FF0000}
     volumes:
       - .:/app
     command: streamlit run dashboard_streamlit.py --server.port=8505 --server.address=0.0.0.0
