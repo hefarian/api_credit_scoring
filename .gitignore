@@ -49,6 +49,5 @@ htmlcov/
 # Tests
 logs/
 
-# Documentation (tracked: *.md files, ignored: others like .txt, build files)
+# Documentation - Local only (not tracked by git)
 Documentation/
-Documentation/*.md
