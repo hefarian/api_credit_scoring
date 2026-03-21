@@ -133,7 +133,22 @@ python app_gradio.py
 
 ```
 
-## 📊 Dashboards & Interfaces
+## � Documentation Complète
+
+Pour la documentation détaillée du projet, consultez le dossier [**Documentation/**](Documentation/):
+
+| Document | Description |
+|----------|-------------|
+| **[RESUME_EXECUTIF_LIVRABLES.md](Documentation/RESUME_EXECUTIF_LIVRABLES.md)** | Résumé exécutif des livrables |
+| **[RAPPORT_VERIFICATION_LIVRABLES.md](Documentation/RAPPORT_VERIFICATION_LIVRABLES.md)** | Vérification complète des livrables |
+| **[CONFORMITE_MISSION.md](Documentation/CONFORMITE_MISSION.md)** | Conformité aux exigences de la mission |
+| **[GUIDE_DEPLOIEMENT_VM.md](Documentation/GUIDE_DEPLOIEMENT_VM.md)** | Guide de déploiement sur serveur distant |
+| **[CI_CD_ISSUES.md](Documentation/CI_CD_ISSUES.md)** | Problèmes et solutions CI/CD |
+| **[presentation_finale.md](Documentation/presentation_finale.md)** | Présentation finale du projet |
+
+Voir [Documentation/README.md](Documentation/README.md) pour l'index complet.
+
+## �📊 Dashboards & Interfaces
 
 ### 1. Streamlit - Dashboard de Monitoring (Port 8505)
 
