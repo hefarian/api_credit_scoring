@@ -111,25 +111,3 @@ jobs:
           Write-Host "  🔗 API:       http://localhost:8000" -ForegroundColor White
           Write-Host "  📊 Dashboard: http://localhost:8501" -ForegroundColor White
           Write-Host ""
-    
-    steps:
-      - name: Log failure
-        shell: powershell
-        run: |
-          Write-Host "❌ DEV Deployment FAILED" -ForegroundColor Red
-          Write-Host "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" -ForegroundColor Yellow
-          done
-          exit 1
-      
-      - name: Run tests
-        run: |
-          cd prod_dev
-          docker-compose exec -T api pytest tests/
-      
-      - name: Notify deployment
-        if: success()
-        run: echo "✓ Deployment to prod_dev successful!"
-      
-      - name: Notify failure
-        if: failure()
-        run: echo "✗ Deployment to prod_dev failed!"
