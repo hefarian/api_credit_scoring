@@ -108,15 +108,16 @@ def mock_model():
     Fixture: Mock du modèle pour les tests en CI/CD.
     
     Retourne un objet mock qui simule un modèle sklearn avec une méthode
-    predict_proba() retournant des probabilités réalistes.
+    predict_proba() retournant des probabilités au format numpy array.
     """
     from unittest import mock
     
     mock_model = mock.MagicMock()
-    # Simuler predict_proba pour retourner [[prob_default, prob_no_default]]
-    # où prob_default est entre 0 et 1
-    mock_model.predict_proba.return_value = [[0.25, 0.75]]  # 25% de défaut
-    mock_model.predict.return_value = [0]  # Classe binaire
+    # Simuler predict_proba pour retourner un numpy array [[prob_default, prob_no_default]]
+    # Format: 2D array de shape (n_samples, 2) pour binary classification
+    # Le premier appel retourne [[0.25, 0.75]], mais en numpy array pour support indexing
+    mock_model.predict_proba.return_value = np.array([[0.25, 0.75]])
+    mock_model.predict.return_value = np.array([0])
     return mock_model
 
 
