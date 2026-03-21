@@ -37,6 +37,7 @@ jobs:
         run: |
           cd "${{ env.P08_DIR }}\api_credit_scoring_dev"
           Write-Host "Pulling latest dev code into clone..." -ForegroundColor Yellow
+          git reset --hard
           git pull origin dev
       
       - name: Stop DEV server containers

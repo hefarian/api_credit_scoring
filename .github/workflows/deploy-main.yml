@@ -37,6 +37,7 @@ jobs:
         run: |
           cd "${{ env.P08_DIR }}\api_credit_scoring_main"
           Write-Host "Pulling latest main code into clone..." -ForegroundColor Yellow
+          git reset --hard
           git pull origin main
       
       - name: Stop MAIN server containers
