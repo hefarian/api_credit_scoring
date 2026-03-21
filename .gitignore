@@ -20,10 +20,10 @@ greg/
 *.ipynb_checkpoints
 
 
-# Modèles
-models/*.pkl
-models/*.joblib
-models/*.h5
+# Modèles - Track pickle files for deployment
+# models/*.pkl  # TRACKED - required for API deployment
+# models/*.joblib  # TRACKED - required for API deployment
+# models/*.h5
 
 # Données
 data/*.csv
