@@ -109,14 +109,26 @@ def mock_model():
     
     Retourne un objet mock qui simule un modèle sklearn avec une méthode
     predict_proba() retournant des probabilités au format numpy array.
+    
+    Importante: La méthode predict_proba doit retourner un array de shape (n_samples, 2)
+    où n_samples correspond à la taille du DataFrame d'entrée.
     """
     from unittest import mock
     
     mock_model = mock.MagicMock()
-    # Simuler predict_proba pour retourner un numpy array [[prob_default, prob_no_default]]
-    # Format: 2D array de shape (n_samples, 2) pour binary classification
-    # Le premier appel retourne [[0.25, 0.75]], mais en numpy array pour support indexing
-    mock_model.predict_proba.return_value = np.array([[0.25, 0.75]])
+    
+    # Créer une side_effect function qui retourne des prédictions adaptées à la taille d'entrée
+    def mock_predict_proba(X):
+        """Retourner une array de shape (n_samples, 2) adaptée à la taille d'entrée"""
+        n_samples = len(X) if hasattr(X, '__len__') else 1
+        # Créer des probabilités : colonne 0 = prob default, colonne 1 = prob no default
+        # Utiliser 0.25 et 0.75 comme dans l'original, mais répété pour chaque sample
+        proba = np.zeros((n_samples, 2))
+        proba[:, 0] = 0.25  # Probabilité default
+        proba[:, 1] = 0.75  # Probabilité pas default
+        return proba
+    
+    mock_model.predict_proba.side_effect = mock_predict_proba
     mock_model.predict.return_value = np.array([0])
     return mock_model
 

@@ -394,8 +394,9 @@ def compute_prediction_stats(logs_df: Optional[pd.DataFrame] = None) -> Dict:
         if 'timestamp' in logs_df.columns:
             logs_df['timestamp'] = normalize_timestamps_to_local_naive(logs_df['timestamp'])
         
-        one_hour_ago = get_local_now_naive() - timedelta(hours=1)
-        today_count = len(logs_df[logs_df['timestamp'] > one_hour_ago]) if 'timestamp' in logs_df.columns else 0
+        # Today starts at 00:00:00 local time
+        today_start = get_local_now_naive().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_count = len(logs_df[logs_df['timestamp'] >= today_start]) if 'timestamp' in logs_df.columns else 0
         
         stats = {
             "total": len(logs_df),
