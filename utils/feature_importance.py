@@ -23,10 +23,12 @@ import seaborn as sns  # Bibliothèque de visualisation statistique (plus jolie 
 try:
     import shap  # SHAP : SHapley Additive exPlanations
     SHAP_AVAILABLE = True  # Marquer que SHAP est disponible
-except ImportError:
-    # Si SHAP n'est pas installé, continuer sans erreur mais marquer comme non disponible
+except Exception as exc:
+    # Si SHAP n'est pas disponible (ImportError, ou erreur dans l'import de dépendances comme numba)
+    # continuer sans erreur mais marquer comme non disponible
     SHAP_AVAILABLE = False
-    print("SHAP non disponible. Installation: pip install shap")
+    import warnings
+    warnings.warn(f"SHAP non disponible: {exc}. Installation: pip install shap")
 
 
 def plot_global_feature_importance(model, feature_names, top_n=20, figsize=(10, 8)):
