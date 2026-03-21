@@ -82,25 +82,25 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Checking API health..." -ForegroundColor Yellow
-          $$maxAttempts = 30
-          $$attempt = 0
+          $maxAttempts = 30
+          $attempt = 0
           
-          while ($$attempt -lt $$maxAttempts) {
+          while ($attempt -lt $maxAttempts) {
               try {
-                  $$response = Invoke-WebRequest -Uri "http://localhost:8000/health" -TimeoutSec 5
-                  if ($$response.StatusCode -eq 200) {
-                      Write-Host "✓ MAIN API is HEALTHY" -ForegroundColor Green
+                  $response = Invoke-WebRequest -Uri "http://localhost:8000/health" -TimeoutSec 5
+                  if ($response.StatusCode -eq 200) {
+                      Write-Host "MAIN API is HEALTHY" -ForegroundColor Green
                       exit 0
                   }
               } catch {
-                  $$attempt++
-                  if ($$attempt -lt $$maxAttempts) {
-                      Write-Host "⏳ Attempt $$attempt/$$maxAttempts - API not ready yet..." -ForegroundColor Yellow
+                  $attempt++
+                  if ($attempt -lt $maxAttempts) {
+                      Write-Host "Attempt $attempt/$maxAttempts - API not ready yet..." -ForegroundColor Yellow
                       Start-Sleep -Seconds 2
                   }
               }
           }
-          Write-Host "❌ API health check failed after $$maxAttempts attempts" -ForegroundColor Red
+          Write-Host "API health check failed after $maxAttempts attempts" -ForegroundColor Red
           exit 1
       
       - name: Log deployment success
