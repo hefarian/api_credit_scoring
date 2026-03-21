@@ -1,9 +1,10 @@
 # ==========================================
-# GitHub Actions Workflow - Deploy
-# Runs on self-hosted runner (no IP required)
+# GitHub Actions Workflow - DEV Server Deploy
+# Deploy to DEV server simulation (P08)
+# Ports: API 8001, Streamlit 8501, DB 5433
 # ==========================================
 
-name: 🚀 Auto-Deploy
+name: 🔵 Deploy DEV Server
 
 on:
   push:
@@ -14,100 +15,83 @@ on:
       - 'Documentation/**'
   workflow_dispatch:
 
+env:
+  P08_DIR: g:\GITHUB\Data-Scientist-OC\P08
+
 jobs:
-  deploy:
-    name: Deploy Application
+  deploy-dev-server:
+    name: Deploy DEV Server (8001/8501/5433)
     runs-on: [self-hosted, windows]
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set deployment info
+      - name: Deployment info
         shell: powershell
         run: |
-          Write-Host ""
-          Write-Host "🚀 Deployment Started" -ForegroundColor Green
-          Write-Host "  Repository: ${{ github.repository }}" -ForegroundColor Cyan
+          Write-Host "DEV Server Deployment" -ForegroundColor Blue
           Write-Host "  Branch: ${{ github.ref_name }}" -ForegroundColor Cyan
           Write-Host "  Commit: ${{ github.sha }}" -ForegroundColor Cyan
-          Write-Host "  Triggered by: ${{ github.actor }}" -ForegroundColor Cyan
-          Write-Host ""
+          Write-Host "  By: ${{ github.actor }}" -ForegroundColor Cyan
       
-      - name: Stop existing containers
+      - name: Pull latest code in DEV clone
         shell: powershell
         run: |
-          cd "${{ github.workspace }}"
-          Write-Host "Stopping old containers..." -ForegroundColor Yellow
-          docker-compose --env-file .env.prod down
-        continue-on-error: true
-      
-      - name: Pull latest code
-        shell: powershell
-        run: |
-          cd "${{ github.workspace }}"
-          Write-Host "Pulling latest code..." -ForegroundColor Yellow
+          cd "${{ env.P08_DIR }}\api_credit_scoring_dev"
+          Write-Host "Pulling latest dev code into clone..." -ForegroundColor Yellow
           git pull origin dev
       
-      - name: Build Docker images
+      - name: Stop DEV server containers
         shell: powershell
         run: |
-          cd "${{ github.workspace }}"
-          Write-Host "Building Docker images..." -ForegroundColor Yellow
-          docker-compose --env-file .env.prod build
+          cd "${{ env.P08_DIR }}"
+          Write-Host "Stopping DEV server containers..." -ForegroundColor Yellow
+          docker-compose -f docker-compose.dev.yml --env-file .env.dev down
+        continue-on-error: true
       
-      - name: Start services
+      - name: Build DEV server images
         shell: powershell
         run: |
-          cd "${{ github.workspace }}"
-          Write-Host "Starting services..." -ForegroundColor Yellow
-          docker-compose --env-file .env.prod up -d
+          cd "${{ env.P08_DIR }}"
+          Write-Host "Building DEV server images..." -ForegroundColor Yellow
+          docker-compose -f docker-compose.dev.yml --env-file .env.dev build
+      
+      - name: Start DEV server
+        shell: powershell
+        run: |
+          cd "${{ env.P08_DIR }}"
+          Write-Host "Starting DEV server..." -ForegroundColor Yellow
+          docker-compose -f docker-compose.dev.yml --env-file .env.dev up -d
       
       - name: Wait for services
         shell: powershell
-        run: |
-          Write-Host "Waiting for services to initialize..." -ForegroundColor Yellow
-          Start-Sleep -Seconds 15
-      
-      - name: Verify services
-        shell: powershell
-        run: |
-          cd "${{ github.workspace }}"
-          Write-Host "Verifying services..." -ForegroundColor Cyan
-          docker-compose --env-file .env.prod ps
+        run: Start-Sleep -Seconds 15
       
       - name: Health check
         shell: powershell
         run: |
-          Write-Host "Checking API health..." -ForegroundColor Yellow
           $maxAttempts = 30
           $attempt = 0
-          
           while ($attempt -lt $maxAttempts) {
               try {
-                  $response = Invoke-WebRequest -Uri "http://localhost:8000/health" -TimeoutSec 5
+                  $response = Invoke-WebRequest -Uri "http://localhost:8001/health" -TimeoutSec 5
                   if ($response.StatusCode -eq 200) {
-                      Write-Host "✓ API is HEALTHY" -ForegroundColor Green
+                      Write-Host "DEV API is HEALTHY on port 8001" -ForegroundColor Green
                       exit 0
                   }
               } catch {
                   $attempt++
                   if ($attempt -lt $maxAttempts) {
-                      Write-Host "Attempt $attempt/$maxAttempts - API not ready yet..." -ForegroundColor Yellow
+                      Write-Host "Attempt $attempt/$maxAttempts..." -ForegroundColor Yellow
                       Start-Sleep -Seconds 2
                   }
               }
           }
-          Write-Host "API health check failed after $maxAttempts attempts" -ForegroundColor Red
+          Write-Host "DEV API health check failed" -ForegroundColor Red
           exit 1
       
-      - name: Log deployment success
+      - name: Deployment success
         shell: powershell
         run: |
-          Write-Host ""
-          Write-Host "✅ Application Deployed Successfully!" -ForegroundColor Green
-          Write-Host ""
-          Write-Host "Access Application:" -ForegroundColor Cyan
-          Write-Host "  🔗 API:       http://localhost:8000" -ForegroundColor White
-          Write-Host "  📊 Dashboard: http://localhost:8501" -ForegroundColor White
-          Write-Host ""
+          Write-Host "DEV Server Deployed!" -ForegroundColor Green
+          Write-Host "  API:       http://localhost:8001" -ForegroundColor White
+          Write-Host "  Streamlit: http://localhost:8501" -ForegroundColor White
+          Write-Host "  Database:  localhost:5433" -ForegroundColor White
