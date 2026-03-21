@@ -12,13 +12,9 @@ ENV/
 greg/
 
 
-# Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb_checkpoints
 
-# MLflow
-mlruns/
-mlartifacts/
 
 # Modèles
 models/*.pkl

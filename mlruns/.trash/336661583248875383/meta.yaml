@@ -1,0 +1,7 @@
+artifact_location: file:///app/notebooks/../mlruns/336661583248875383
+creation_time: 1769769232253
+experiment_id: '336661583248875383'
+last_update_time: 1769779053675
+lifecycle_stage: deleted
+name: credit_scoring
+tags: {}

@@ -1,0 +1,11 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-8.3.4, pluggy-1.5.0
+rootdir: G:\GITHUB\Data-Scientist-OC\PROJET08
+plugins: anyio-4.7.0, Faker-40.8.0, cov-7.0.0, typeguard-4.4.4
+collected 179 items
+
+tests\test_api.py ....                                                   [  2%]
+tests\test_data_loader.py ................                               [ 11%]
+tests\test_feature_engineering.py ..............                         [ 18%]
+tests\test_feature_engineering_advanced.py .s............                [ 26%]
+tests\test_feature_importance.py sssssssssssssssssss                     [ 37%]

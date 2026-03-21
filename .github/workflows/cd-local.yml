@@ -1,4 +1,4 @@
-name: CD Local
+name: CD Remote
 
 on:
   workflow_run:
@@ -17,16 +17,16 @@ on:
           - prod
 
 concurrency:
-  group: cd-local-${{ github.event.workflow_run.head_branch || inputs.target }}
+  group: cd-remote-${{ github.event.workflow_run.head_branch || inputs.target }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
 
@@ -42,41 +42,35 @@ jobs:
             echo "value=dev" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Resolve Portainer webhook
-        id: webhook
-        shell: bash
+      - name: Deploy to remote server via SSH
         env:
-          DEV_WEBHOOK: ${{ secrets.PORTAINER_WEBHOOK_URL_DEV }}
-          PROD_WEBHOOK: ${{ secrets.PORTAINER_WEBHOOK_URL_PROD }}
-        run: |
-          if [[ "${{ steps.target.outputs.value }}" == "prod" ]]; then
-            echo "value=${PROD_WEBHOOK}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=${DEV_WEBHOOK}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Ensure deploy script is executable
-        run: chmod +x scripts/deploy_local.sh
-
-      - name: Validate Docker availability
-        run: |
-          docker --version
-          if docker compose version >/dev/null 2>&1; then
-            docker compose version
-          else
-            docker-compose --version
-          fi
-
-      - name: Deploy stack locally
-        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           TARGET_ENV: ${{ steps.target.outputs.value }}
-          PORTAINER_WEBHOOK_URL: ${{ steps.webhook.outputs.value }}
-        run: ./scripts/deploy_local.sh "$TARGET_ENV"
-
-      - name: Show deployed services
         run: |
-          if docker compose version >/dev/null 2>&1; then
+          # Créer fichier de clé SSH
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          
+          # Déployer sur serveur distant
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+            cd ~/api_credit_scoring
+            git pull origin
+            docker compose down
+            docker compose up -d --build
             docker compose ps
-          else
-            docker-compose ps
-          fi
+          EOF
+          
+          # Cleanup
+          rm ~/.ssh/deploy_key
+
+      - name: Notify deployment status
+        if: success()
+        run: echo "✅ Deployment to ${{ steps.target.outputs.value }} completed successfully"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: echo "❌ Deployment failed for ${{ steps.target.outputs.value }}"

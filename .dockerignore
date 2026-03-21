@@ -12,11 +12,8 @@ venv
 env
 .venv
 
-# Jupyter
 .ipynb_checkpoints
 
-# MLflow (sera monté en volume)
-mlruns/
 
 # IDE
 .vscode

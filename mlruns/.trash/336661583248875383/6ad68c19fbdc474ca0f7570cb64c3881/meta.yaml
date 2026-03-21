@@ -1,0 +1,15 @@
+artifact_uri: file:///app/notebooks/../mlruns/336661583248875383/6ad68c19fbdc474ca0f7570cb64c3881/artifacts
+deleted_time: 1769778398683
+end_time: 1769769965387
+entry_point_name: ''
+experiment_id: '336661583248875383'
+lifecycle_stage: deleted
+run_id: 6ad68c19fbdc474ca0f7570cb64c3881
+run_name: RandomForest_balanced
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1769769878432
+status: 3
+tags: []
+user_id: root

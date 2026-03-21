@@ -22,13 +22,13 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 5435:5432
     
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
       - name: install dependencies
@@ -37,7 +37,7 @@ jobs:
           pip install -r requirements.txt
       - name: run pytest
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/credit_scoring
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5435/credit_scoring
         run: |
           pytest -q
 
@@ -46,10 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: log in to DockerHub
         if: github.event_name == 'push'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: test docker-compose configuration
         run: |
           docker-compose config

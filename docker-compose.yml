@@ -12,7 +12,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-credit_scoring}
       TZ: UTC
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5435}:5435"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -30,60 +30,17 @@ services:
       dockerfile: Dockerfile.api
     container_name: ${API_CONTAINER_NAME:-credit_scoring_api}
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "${API_PORT:-8005}:8005"
     environment:
       - GIT_PYTHON_REFRESH=quiet
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-credit_scoring}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5435/${POSTGRES_DB:-credit_scoring}
     working_dir: /app
-    command: uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.api:app --host 0.0.0.0 --port 8005 --reload
     volumes:
       - .:/app
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - scoring_network
-
-  jupyter:
-    build: .
-    container_name: ${JUPYTER_CONTAINER_NAME:-credit_scoring_jupyter}
-    ports:
-      - "${JUPYTER_PORT:-8888}:8888"
-    volumes:
-      - .:/app
-    environment:
-      - JUPYTER_TOKEN=${JUPYTER_TOKEN:-greg2026}
-      - GIT_PYTHON_REFRESH=quiet
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-credit_scoring}
-    command: >
-      jupyter lab
-      --ip=0.0.0.0
-      --port=8888
-      --no-browser
-      --allow-root
-      --ServerApp.token=${JUPYTER_TOKEN:-greg2026}
-      --ServerApp.password='greg2026'
-    working_dir: /app
-    stdin_open: true
-    tty: true
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - scoring_network
-
-  mlflow:
-    build: .
-    container_name: ${MLFLOW_CONTAINER_NAME:-credit_scoring_mlflow}
-    ports:
-      - "${MLFLOW_PORT:-5000}:5000"
-    environment:
-      - GIT_PYTHON_REFRESH=quiet
-    volumes:
-      - ./mlruns:/app/mlruns
-    command: mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri file:/app/mlruns
-    profiles:
-      - mlflow
     networks:
       - scoring_network
 
@@ -93,13 +50,13 @@ services:
       dockerfile: Dockerfile.streamlit
     container_name: ${STREAMLIT_CONTAINER_NAME:-credit_scoring_streamlit}
     ports:
-      - "${STREAMLIT_PORT:-8501}:8501"
+      - "${STREAMLIT_PORT:-8505}:8505"
     environment:
       - GIT_PYTHON_REFRESH=quiet
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-credit_scoring}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5435/${POSTGRES_DB:-credit_scoring}
     volumes:
       - .:/app
-    command: streamlit run dashboard_streamlit.py --server.port=8501 --server.address=0.0.0.0
+    command: streamlit run dashboard_streamlit.py --server.port=8505 --server.address=0.0.0.0
     working_dir: /app
     depends_on:
       postgres:

@@ -1,0 +1,15 @@
+artifact_uri: file:///app/notebooks/../mlruns/459041604418719105/af2d8d4a51734ffdac57cd290bde834a/artifacts
+deleted_time: 1770449995181
+end_time: null
+entry_point_name: ''
+experiment_id: '459041604418719105'
+lifecycle_stage: deleted
+run_id: af2d8d4a51734ffdac57cd290bde834a
+run_name: MLPClassifier
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1770223360002
+status: 1
+tags: []
+user_id: root

@@ -1,0 +1,15 @@
+artifact_uri: file:///app/notebooks/../mlruns/459041604418719105/647a0203abd2496bad06fcdcb8a4dd98/artifacts
+end_time: 1770210590925
+entry_point_name: ''
+experiment_id: '459041604418719105'
+lifecycle_stage: active
+run_id: 647a0203abd2496bad06fcdcb8a4dd98
+run_name: LogisticRegression_balanced
+run_uuid: 647a0203abd2496bad06fcdcb8a4dd98
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1770210303870
+status: 3
+tags: []
+user_id: root

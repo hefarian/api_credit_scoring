@@ -1,0 +1,15 @@
+artifact_uri: file:///app/notebooks/../mlruns/711828406990651238/c77ee67062a44706a13f36006db8b8ba/artifacts
+deleted_time: 1769779053675
+end_time: 1769774706121
+entry_point_name: ''
+experiment_id: '711828406990651238'
+lifecycle_stage: deleted
+run_id: c77ee67062a44706a13f36006db8b8ba
+run_name: XGBoost_optimized
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1769774701860
+status: 3
+tags: []
+user_id: root

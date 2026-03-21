@@ -20,10 +20,10 @@ COPY . .
 RUN mkdir -p ~/.streamlit && \
     echo "[server]\n\
 headless = true\n\
-port = 8501\n\
+port = 8505\n\
 enableCORS = false\n\
 [client]\n\
 showErrorDetails = true" > ~/.streamlit/config.toml
 
 # Commande de démarrage
-CMD ["streamlit", "run", "dashboard_streamlit.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "dashboard_streamlit.py", "--server.port=8505", "--server.address=0.0.0.0"]

@@ -1,0 +1,15 @@
+artifact_uri: file:///app/notebooks/../mlruns/459041604418719105/12556e0c74f546eeaa67d68886934bdd/artifacts
+end_time: 1770456500098
+entry_point_name: ''
+experiment_id: '459041604418719105'
+lifecycle_stage: active
+run_id: 12556e0c74f546eeaa67d68886934bdd
+run_name: SkorchMLP
+run_uuid: 12556e0c74f546eeaa67d68886934bdd
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1770455345618
+status: 3
+tags: []
+user_id: root

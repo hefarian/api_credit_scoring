@@ -1,0 +1,15 @@
+artifact_uri: file:///app/notebooks/../mlruns/459041604418719105/7a7130cce8974dd4b3a5a58c0662f05c/artifacts
+end_time: 1769779563454
+entry_point_name: ''
+experiment_id: '459041604418719105'
+lifecycle_stage: active
+run_id: 7a7130cce8974dd4b3a5a58c0662f05c
+run_name: LightGBM_balanced
+run_uuid: 7a7130cce8974dd4b3a5a58c0662f05c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1769779499862
+status: 3
+tags: []
+user_id: root

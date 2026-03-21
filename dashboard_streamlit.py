@@ -94,7 +94,7 @@ except:
     THRESHOLD = 0.5
 
 # API endpoint
-API_URL = "http://api:8000/predict"
+API_URL = "http://api:8005/predict"
 
 # ============================================================================
 # FONCTIONS DE CONVERSION DE DATE
@@ -1469,9 +1469,9 @@ elif page == "À propos":
     - **Modèle** : XGBoost (optimal_threshold_xgb.json)
     
     ### Endpoints connexes
-    - **API REST** : http://localhost:8000
-    - **Interface Streamlit** : http://localhost:8501
-    - **Notebook Jupyter** : http://localhost:8888
+    - **API REST** : http://localhost:8005
+    - **Interface Streamlit** : http://localhost:8505
+    - **Dashboard Streamlit**: http://localhost:8505
     
     ### Auteur
     Gregory CRESPIN - Mars 2026

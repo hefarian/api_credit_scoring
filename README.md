@@ -13,16 +13,16 @@ Ce projet implemente l'infrastructure de **production** pour un outil de **scori
 L'infrastructure inclut :
 - **API REST** pour les predictions en temps reel
 - **Monitoring** pour la detection de drift et l'alerte
-- **Dashboard Jupyter** pour le suivi des performances
+- **Dashboard Streamlit** pour le suivi des performances
 - **Orchestration Docker** pour le deploiement
 
 ## Arquitechture
 
 ```
 PROJET08/
-├── Dockerfile                   # Image Docker (Jupyter + dependances)
+├── Dockerfile                   # Image Docker (dependances)
 ├── Dockerfile.api               # Image Docker pour l'API FastAPI
-├── docker-compose.yml           # Orchestration (Jupyter, MLflow optionnel)
+├── docker-compose.yml           # Orchestration (PostgreSQL, API, Streamlit)
 ├── .dockerignore                # Fichiers exclus du contexte Docker
 ├── data/                        # Donnees brutes et preparees
 ├── notebooks/
@@ -42,7 +42,6 @@ PROJET08/
 │   ├── best_model_xgb.pkl       # Modele XGBoost retenu
 │   └── optimal_threshold_xgb.json
 ├── tests/                       # Tests unitaires
-├── mlruns/                      # Runs MLflow (historique)
 ├── README.md                    # Documentation
 └── requirements.txt
 ```
@@ -60,16 +59,10 @@ docker-compose up --build
 
 | URL | Service | Description | Port |
 |-----|---------|-------------|------|
-| **http://localhost:8000** | 🌐 **FastAPI** | API REST - Documentation Swagger | 8000 |
-| **http://localhost:8000/docs** | 📖 Swagger UI | Tester les endpoints API | 8000 |
-| **http://localhost:8501** | 📊 **Streamlit** | Dashboard monitoring en temps réel | 8501 |
-| **http://localhost:8888** | 📓 Jupyter Lab | Notebook avancé (token: `greg2026`) | 8888 |
+| **http://localhost:8005** | 🌐 **FastAPI** | API REST - Documentation Swagger | 8005 |
+| **http://localhost:8005/docs** | 📖 Swagger UI | Tester les endpoints API | 8005 |
+| **http://localhost:8505** | 📊 **Streamlit** | Dashboard monitoring en temps réel | 8505 |
 
-**MLflow UI** (optionnel - historique des expériences) :
-```bash
-docker-compose --profile mlflow up --build
-# MLflow : http://localhost:5000
-```
 
 ### Option 2 : Services spécifiques uniquement
 
@@ -83,63 +76,38 @@ docker-compose up api
 docker-compose up api streamlit
 ```
 
-## CD local avec GitHub Actions
+## CI/CD avec Déploiement Distant
 
-Le projet peut être déployé automatiquement sur votre VM VirtualBox via un runner GitHub Actions auto-hébergé.
+Le projet inclut un pipeline **CI/CD automatisé** via GitHub Actions pour tester et déployer sur un serveur distant.
 
-Principe retenu :
-- `dev` déploie un stack local de développement
-- `main` déploie un stack local de production
-- les deux stacks peuvent coexister car les noms de conteneurs et ports sont paramétrés
-- Portainer reste optionnel : si un webhook est configuré, il est appelé après le déploiement
+### Intégration Continue (CI)
 
-### 1. Installer un runner self-hosted sur la VM
+À chaque push sur `main` ou `dev`, le workflow `.github/workflows/ci.yml` exécute:
+- ✅ Tests unitaires (pytest 179 tests)
+- ✅ Vérification du code (linting)
+- ✅ Construction des images Docker
 
-Depuis GitHub : `Settings > Actions > Runners > New self-hosted runner`
+### Déploiement Continu (CD)
 
-Sur la VM Linux, installer le runner puis l'enregistrer avec au minimum les labels :
-```bash
-self-hosted,linux
-```
+Après succès du CI, le workflow `.github/workflows/cd-remote.yml` déploie automatiquement:
+- Connexion SSH au serveur distant
+- Mise à jour du code via git pull
+- Redémarrage des services Docker Compose
 
-Le runner doit avoir accès à Docker et au dépôt.
+### Configuration pour Déploiement Distant
 
-### 2. Secrets GitHub recommandés
+Ajouter les **GitHub Secrets** dans `Settings > Secrets and variables > Actions`:
 
-Dans `Settings > Secrets and variables > Actions`, ajouter si nécessaire :
+| Secret | Exemple |
+|--------|---------|
+| `DEPLOY_HOST` | `192.168.1.100` ou `api.example.com` |
+| `DEPLOY_USER` | `ubuntu` |
+| `DEPLOY_PRIVATE_KEY` | Contenu de votre clé SSH privée |
 
-- `PORTAINER_WEBHOOK_URL_DEV`
-- `PORTAINER_WEBHOOK_URL_PROD`
+### Fichiers impliqués
 
-Ces secrets sont optionnels. Si absents, le déploiement se fait directement par `docker compose` sans notification Portainer.
-
-### 3. Déclenchement du CD
-
-- push sur `dev` : déploiement `dev`
-- push sur `main` : déploiement `prod`
-- exécution manuelle possible via l'action `CD Local`
-
-### 4. Ports par environnement
-
-Production :
-- API : `8000`
-- Streamlit : `8501`
-- Jupyter : `8888`
-- PostgreSQL : `5432`
-
-Développement :
-- API : `8001`
-- Streamlit : `8502`
-- Jupyter : `8889`
-- PostgreSQL : `5433`
-
-### 5. Fichiers impliqués
-
-- `.github/workflows/ci.yml` : CI sur `main` et `dev`
-- `.github/workflows/cd-local.yml` : déploiement local sur runner self-hosted
-- `scripts/deploy_local.sh` : script de déploiement branch-aware
-- `docker-compose.yml` : noms/ports paramétrables par environnement
-- `GUIDE_DEPLOIEMENT_VM.md` : tutoriel complet VM + Git + commandes
+- `.github/workflows/ci.yml` : Tests et build Docker
+- `.github/workflows/cd-remote.yml` : Déploiement SSH sur serveur distant
 
 
 
@@ -154,7 +122,7 @@ source venv/bin/activate  # Sur Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 3. Lancer l'API
-uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.api:app --reload --host 0.0.0.0 --port 8005
 
 # 4. Dans d'autres terminaux :
 # - Dashboard Streamlit
@@ -163,19 +131,13 @@ streamlit run dashboard_streamlit.py
 # - Interface Gradio
 python app_gradio.py
 
-# - Jupyter
-jupyter lab
-```
-
-# 4. Dans un autre terminal, lancer Jupyter
-jupyter notebook
 ```
 
 ## 📊 Dashboards & Interfaces
 
-### 1. Streamlit - Dashboard de Monitoring (Port 8501)
+### 1. Streamlit - Dashboard de Monitoring (Port 8505)
 
-**Accédez à :** http://localhost:8501
+**Accédez à :** http://localhost:8505
 
 Dashboard interactif pour :
 - 📈 **KPIs en temps réel** : Total prédictions, scores moyens, distribution
@@ -191,19 +153,7 @@ Dashboard interactif pour :
 
 **Fichier source :** [dashboard_streamlit.py](dashboard_streamlit.py)
 
----
 
-### 2. Jupyter Notebook - Dashboard Avancé (Port 8888)
-
-**Accédez à :** http://localhost:8888
-
-Notebook complet pour :
-- 🔬 **Analyse approfondie** : Explorations personnalisées
-- 📊 **Visualisations avancées** : Matplotlib, Seaborn, Plotly
-- 🧮 **Calculs personnalisés** : Modification du code à la volée
-- 📝 **Documentation** : Explications et notes
-
-**Token :** `greg2026`
 
 **Fichier :** [notebooks/05_deployment_and_monitoring.ipynb](notebooks/05_deployment_and_monitoring.ipynb)
 
@@ -214,7 +164,7 @@ Notebook complet pour :
 L'API de scoring est contenue dans [src/api.py](src/api.py) et expose :
 
 - `GET /health` : État de santé du service
-- `GET /notebook?password=greg2026` : 📖 Dashboard de monitoring (Notebook 5) dans Jupyter Lab
+
 - `GET /monitor?password=greg2026` : Dashboard HTML des statistiques et drift
 - `POST /predict` : Prediction de scoring credit (single client)
   - Input: `{"data": {...}}` avec les features necessaires
@@ -227,8 +177,8 @@ FastAPI fournit une documentation interactive **automatique** :
 
 | URL | Description |
 |-----|-------------|
-| **`http://localhost:8000/docs`** | 📖 Swagger UI (interactif - tester les endpoints) |
-| **`http://localhost:8000/redoc`** | 📋 ReDoc (documentation lisible) |
+| **`http://localhost:8005/docs`** | 📖 Swagger UI (interactif - tester les endpoints) |
+| **`http://localhost:8005/redoc`** | 📋 ReDoc (documentation lisible) |
 
 Vous pouvez **tester directement** les endpoints dans Swagger !
 
@@ -236,29 +186,19 @@ Vous pouvez **tester directement** les endpoints dans Swagger !
 
 **Monitoring Dashboard (HTML)** :
 ```
-http://localhost:8000/monitor?password=greg2026
-```
-
-**Notebook 5 (Jupyter Lab)** - via redirection API :
-```
-http://localhost:8000/notebook?password=greg2026
-```
-
-**Jupyter Lab direct** (sans passer par l'API) :
-```
-http://localhost:8888 (token : greg2026)
+http://localhost:8005/monitor?password=greg2026
 ```
 
 ### Exemples
 
 **Command line - Health check :**
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8005/health
 ```
 
 **Command line - Prédiction single :**
 ```bash
-curl -X POST "http://localhost:8000/predict" \
+curl -X POST "http://localhost:8005/predict" \
   -H "Content-Type: application/json" \
   -d '{"data": {"feature1": 100, "feature2": 25, ...}}'
 ```
@@ -273,7 +213,7 @@ $payload = @{
     }
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "http://localhost:8000/predict" `
+Invoke-WebRequest -Uri "http://localhost:8005/predict" `
   -Method POST `
   -ContentType "application/json" `
   -Body $payload
@@ -321,8 +261,8 @@ Les donnees brutes initiales (archives dans `greg/`) incluaient :
 - **Metriques** : AUC-ROC, Recall, F1-score adapte au desequilibre des classes
 
 ### Suivi de la performance
-- Dashboard Jupyter : [notebooks/05_deployment_and_monitoring.ipynb](notebooks/05_deployment_and_monitoring.ipynb)
-- MLflow (optionnel) : Historique complet des experiments
+
+
 - Monitoring automatique : Detection de drift des features et des predictions
 
 ## Tests

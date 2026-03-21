@@ -23,8 +23,8 @@ echo Suppression des conteneurs, reseaux et volumes...
 docker-compose down -v --remove-orphans
 
 echo Suppression des images de ce projet...
-docker rmi credit_scoring_api credit_scoring_jupyter credit_scoring_streamlit 2>nul
-docker rmi projet08-api projet08-jupyter projet08-streamlit 2>nul
+docker rmi credit_scoring_api credit_scoring_streamlit 2>nul
+docker rmi projet08-api projet08-streamlit 2>nul
 
 echo Nettoyage du cache de build Docker...
 docker builder prune -f
@@ -80,7 +80,6 @@ echo Services disponibles:
 echo   - API: http://localhost:8000
 echo   - Swagger: http://localhost:8000/docs
 echo   - Streamlit: http://localhost:8501
-echo   - Jupyter: http://localhost:8888 ^(token: greg2026^)
 echo ========================================
 pause
 goto :eof

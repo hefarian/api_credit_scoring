@@ -1,0 +1,15 @@
+creation_timestamp: 1770543472598
+current_stage: None
+deployment_job_state: null
+description: ''
+last_updated_timestamp: 1770543472598
+model_id: ''
+name: XGBoost
+run_id: 2070eaf98a0147efb7cceb366fc87402
+run_link: ''
+source: runs:/2070eaf98a0147efb7cceb366fc87402/model
+status: READY
+status_message: null
+storage_location: runs:/2070eaf98a0147efb7cceb366fc87402/model
+user_id: null
+version: 1

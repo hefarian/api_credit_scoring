@@ -11,11 +11,8 @@ seaborn==0.13.0
 xgboost==2.0.3
 
 # MLOps
-mlflow==2.9.2
 
 # Utilities
-jupyter==1.0.0
-jupyterlab==4.0.9
 ipykernel==6.27.1
 
 # Model Interpretation
