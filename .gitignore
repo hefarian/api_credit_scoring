@@ -8,6 +8,10 @@ venv/
 env/
 ENV/
 
+# Environment files - Local configuration (not tracked)
+.env.dev
+.env.prod
+
 #Divers
 greg/
 
