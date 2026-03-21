@@ -1,10 +1,9 @@
 # ==========================================
-# GitHub Actions Workflow - MAIN Auto-Deploy
-# CRITICAL: Preserves MAIN database data!
+# GitHub Actions Workflow - Deploy MAIN
 # Runs on self-hosted runner (no IP required)
 # ==========================================
 
-name: 🔴 Auto-Deploy MAIN (Port 8000/5432) - DB SAFE
+name: 🔴 Deploy MAIN (Production)
 
 on:
   push:
@@ -12,17 +11,16 @@ on:
       - main
     paths-ignore:
       - '**.md'
-      - 'Documentations/**'
-      - 'oral/**'
+      - 'Documentation/**'
   workflow_dispatch:
 
 jobs:
   deploy-main:
-    name: Deploy MAIN Environment (Preserve DB)
+    name: Deploy MAIN Environment
     runs-on: [self-hosted, windows]
     
     steps:
-      - name: Checkout MAIN code
+      - name: Checkout main code
         uses: actions/checkout@v4
         with:
           ref: main
@@ -31,74 +29,41 @@ jobs:
         shell: powershell
         run: |
           Write-Host ""
-          Write-Host "🚀 MAIN Deployment Started (DATA PRESERVATION MODE)" -ForegroundColor Red
+          Write-Host "🚀 MAIN Deployment Started (PRODUCTION)" -ForegroundColor Red
           Write-Host "  Repository: ${{ github.repository }}" -ForegroundColor Cyan
           Write-Host "  Branch: ${{ github.ref_name }}" -ForegroundColor Cyan
           Write-Host "  Commit: ${{ github.sha }}" -ForegroundColor Cyan
           Write-Host "  Triggered by: ${{ github.actor }}" -ForegroundColor Cyan
           Write-Host ""
-          Write-Host "⚠️  CRITICAL: Database data will be PRESERVED" -ForegroundColor Yellow
-          Write-Host ""
       
-      - name: Backup MAIN database
+      - name: Stop existing containers
         shell: powershell
         run: |
-          Write-Host "📦 Backing up MAIN database..." -ForegroundColor Yellow
-          
-          $$backupDir = "${{ github.workspace }}/db_backups"
-          New-Item -ItemType Directory -Path $$backupDir -Force | Out-Null
-          
-          $$backupFile = "$$backupDir/backup_$(Get-Date -Format 'yyyyMMdd_HHmmss').sql"
-          
-          # Export database using docker exec
-          docker exec main_credit_scoring_postgres pg_dump `
-            -U appuser_main `
-            -d app_main `
-            --no-password > $$backupFile
-          
-          if (Test-Path $$backupFile) {
-              $$size = (Get-Item $$backupFile).Length / 1MB
-              Write-Host "✓ Database backup created: $$backupFile ('$'{0:F2}' -f $$size' MB)" -ForegroundColor Green
-          }
+          cd "${{ github.workspace }}"
+          Write-Host "Stopping old containers..." -ForegroundColor Yellow
+          docker-compose down
         continue-on-error: true
       
-      - name: Stop APP containers only (keep DB running)
-        shell: powershell
-        run: |
-          Write-Host "Stopping MAIN application containers (keeping DB)..." -ForegroundColor Yellow
-          
-          # Stop API and Streamlit, but keep PostgreSQL
-          docker stop main_credit_scoring_api main_credit_scoring_streamlit 2>$$null
-          
-          Write-Host "✓ Application containers stopped" -ForegroundColor Green
-        continue-on-error: true
-      
-      - name: Pull latest MAIN code
+      - name: Pull latest main code
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
           Write-Host "Pulling latest code from main branch..." -ForegroundColor Yellow
           git pull origin main
       
-      - name: Build updated MAIN Docker images (excluding DB)
+      - name: Build Docker images
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Building MAIN Docker images (API & Streamlit only)..." -ForegroundColor Yellow
-          
-          # Build only API and Streamlit services, skip database
-          docker-compose -f docker-compose.main.yml `
-            --env-file .env.main `
-            build main_credit_scoring_api main_credit_scoring_streamlit
+          Write-Host "Building Docker images for MAIN..." -ForegroundColor Yellow
+          docker-compose build
       
-      - name: Start MAIN environment with existing database
+      - name: Start MAIN environment
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Starting MAIN environment (reusing existing database)..." -ForegroundColor Yellow
-          
-          # Start all services (DB will already be running)
-          docker-compose -f docker-compose.main.yml --env-file .env.main up -d
+          Write-Host "Starting MAIN environment..." -ForegroundColor Yellow
+          docker-compose up -d
       
       - name: Wait for services
         shell: powershell
@@ -106,40 +71,14 @@ jobs:
           Write-Host "Waiting for services to initialize..." -ForegroundColor Yellow
           Start-Sleep -Seconds 15
       
-      - name: Verify database connection
-        shell: powershell
-        run: |
-          Write-Host "Verifying database is intact..." -ForegroundColor Cyan
-          
-          $$attempts = 0
-          while ($$attempts -lt 10) {
-              try {
-                  $$result = docker exec main_credit_scoring_postgres `
-                    psql -U appuser_main -d app_main -c "SELECT COUNT(*) FROM information_schema.tables" 2>$$null
-                  
-                  if ($$result) {
-                      Write-Host "✓ Database connection verified" -ForegroundColor Green
-                      exit 0
-                  }
-              } catch {
-                  # Continue
-              }
-              
-              $$attempts++
-              Write-Host "⏳ Waiting for DB... (attempt $$attempts/10)" -ForegroundColor Yellow
-              Start-Sleep -Seconds 3
-          }
-          
-          Write-Host "✓ Database is accessible" -ForegroundColor Green
-      
-      - name: Verify MAIN services
+      - name: Verify services
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Verifying MAIN services..." -ForegroundColor Cyan
-          docker-compose -f docker-compose.main.yml --env-file .env.main ps
+          Write-Host "Verifying services..." -ForegroundColor Cyan
+          docker-compose ps
       
-      - name: Health check API
+      - name: Health check
         shell: powershell
         run: |
           Write-Host "Checking API health..." -ForegroundColor Yellow
@@ -164,45 +103,13 @@ jobs:
           Write-Host "❌ API health check failed after $$maxAttempts attempts" -ForegroundColor Red
           exit 1
       
-      - name: Verify data integrity
-        shell: powershell
-        run: |
-          Write-Host "Verifying data integrity..." -ForegroundColor Cyan
-          
-          try {
-              $$tableCount = docker exec main_credit_scoring_postgres `
-                psql -U appuser_main -d app_main -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'" 2>$$null
-              
-              Write-Host "✓ Database tables found: $$tableCount" -ForegroundColor Green
-          } catch {
-              Write-Host "⚠️  Could not verify table count" -ForegroundColor Yellow
-          }
-      
       - name: Log deployment success
         shell: powershell
         run: |
           Write-Host ""
-          Write-Host "✅ MAIN Environment Deployed Successfully (Data Preserved)!" -ForegroundColor Green
+          Write-Host "✅ MAIN Environment Deployed Successfully!" -ForegroundColor Green
           Write-Host ""
           Write-Host "Access MAIN Environment:" -ForegroundColor Cyan
           Write-Host "  🔗 API:       http://localhost:8000" -ForegroundColor White
-          Write-Host "  📊 Streamlit: http://localhost:8500" -ForegroundColor White
-          Write-Host "  💾 Database:  localhost:5432 (DATA VERIFIED ✓)" -ForegroundColor Green
-          Write-Host ""
-  
-  notify-failure:
-    name: ⚠️ Notify on Deployment Failure
-    runs-on: [self-hosted, windows]
-    needs: deploy-main
-    if: failure()
-    
-    steps:
-      - name: Log failure and keep database safe
-        shell: powershell
-        run: |
-          Write-Host ""
-          Write-Host "❌ MAIN Deployment FAILED" -ForegroundColor Red
-          Write-Host "Database has been preserved." -ForegroundColor Yellow
-          Write-Host "⚠️  Database was NOT affected (safety mode active)" -ForegroundColor Yellow
-          Write-Host "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" -ForegroundColor Cyan
+          Write-Host "  📊 Dashboard: http://localhost:8501" -ForegroundColor White
           Write-Host ""

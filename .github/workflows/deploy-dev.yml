@@ -1,9 +1,9 @@
 # ==========================================
-# GitHub Actions Workflow - DEV Auto-Deploy
+# GitHub Actions Workflow - Deploy
 # Runs on self-hosted runner (no IP required)
 # ==========================================
 
-name: 🔵 Auto-Deploy DEV (Port 8001/5433)
+name: 🚀 Auto-Deploy
 
 on:
   push:
@@ -11,58 +11,57 @@ on:
       - dev
     paths-ignore:
       - '**.md'
-      - 'Documentations/**'
-      - 'oral/**'
+      - 'Documentation/**'
   workflow_dispatch:
 
 jobs:
-  deploy-dev:
-    name: Deploy DEV Environment
+  deploy:
+    name: Deploy Application
     runs-on: [self-hosted, windows]
     
     steps:
-      - name: Checkout DEV code
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: dev
       
       - name: Set deployment info
         shell: powershell
         run: |
-          Write-Host "🚀 DEV Deployment Started" -ForegroundColor Green
+          Write-Host ""
+          Write-Host "🚀 Deployment Started" -ForegroundColor Green
           Write-Host "  Repository: ${{ github.repository }}" -ForegroundColor Cyan
           Write-Host "  Branch: ${{ github.ref_name }}" -ForegroundColor Cyan
           Write-Host "  Commit: ${{ github.sha }}" -ForegroundColor Cyan
           Write-Host "  Triggered by: ${{ github.actor }}" -ForegroundColor Cyan
+          Write-Host ""
       
-      - name: Stop existing DEV containers
+      - name: Stop existing containers
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Stopping old DEV containers..." -ForegroundColor Yellow
-          docker-compose -f docker-compose.dev.yml --env-file .env.dev down
+          Write-Host "Stopping old containers..." -ForegroundColor Yellow
+          docker-compose down
         continue-on-error: true
       
-      - name: Pull latest DEV code
+      - name: Pull latest code
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Pulling latest code from dev branch..." -ForegroundColor Yellow
+          Write-Host "Pulling latest code..." -ForegroundColor Yellow
           git pull origin dev
       
-      - name: Build DEV Docker images
+      - name: Build Docker images
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Building DEV Docker images..." -ForegroundColor Yellow
-          docker-compose -f docker-compose.dev.yml --env-file .env.dev build
+          Write-Host "Building Docker images..." -ForegroundColor Yellow
+          docker-compose build
       
-      - name: Start DEV environment
+      - name: Start services
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Starting DEV environment..." -ForegroundColor Yellow
-          docker-compose -f docker-compose.dev.yml --env-file .env.dev up -d
+          Write-Host "Starting services..." -ForegroundColor Yellow
+          docker-compose up -d
       
       - name: Wait for services
         shell: powershell
@@ -70,55 +69,48 @@ jobs:
           Write-Host "Waiting for services to initialize..." -ForegroundColor Yellow
           Start-Sleep -Seconds 15
       
-      - name: Verify DEV services
+      - name: Verify services
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
-          Write-Host "Verifying DEV services..." -ForegroundColor Cyan
-          docker-compose -f docker-compose.dev.yml --env-file .env.dev ps
+          Write-Host "Verifying services..." -ForegroundColor Cyan
+          docker-compose ps
       
       - name: Health check
         shell: powershell
         run: |
           Write-Host "Checking API health..." -ForegroundColor Yellow
-          $maxAttempts = 30
-          $attempt = 0
+          $$maxAttempts = 30
+          $$attempt = 0
           
-          while ($attempt -lt $maxAttempts) {
+          while ($$attempt -lt $$maxAttempts) {
               try {
-                  $response = Invoke-WebRequest -Uri "http://localhost:8001/health" -TimeoutSec 5
-                  if ($response.StatusCode -eq 200) {
-                      Write-Host "✓ DEV API is HEALTHY" -ForegroundColor Green
+                  $$response = Invoke-WebRequest -Uri "http://localhost:8000/health" -TimeoutSec 5
+                  if ($$response.StatusCode -eq 200) {
+                      Write-Host "✓ API is HEALTHY" -ForegroundColor Green
                       exit 0
                   }
               } catch {
-                  $attempt++
-                  if ($attempt -lt $maxAttempts) {
-                      Write-Host "⏳ Attempt $attempt/$maxAttempts - API not ready yet..." -ForegroundColor Yellow
+                  $$attempt++
+                  if ($$attempt -lt $$maxAttempts) {
+                      Write-Host "⏳ Attempt $$attempt/$$maxAttempts - API not ready yet..." -ForegroundColor Yellow
                       Start-Sleep -Seconds 2
                   }
               }
           }
-          Write-Host "❌ API health check failed after $maxAttempts attempts" -ForegroundColor Red
+          Write-Host "❌ API health check failed after $$maxAttempts attempts" -ForegroundColor Red
           exit 1
       
       - name: Log deployment success
         shell: powershell
         run: |
           Write-Host ""
-          Write-Host "✅ DEV Environment Deployed Successfully!" -ForegroundColor Green
+          Write-Host "✅ Application Deployed Successfully!" -ForegroundColor Green
           Write-Host ""
-          Write-Host "Access DEV Environment:" -ForegroundColor Cyan
-          Write-Host "  🔗 API:       http://localhost:8001" -ForegroundColor White
-          Write-Host "  📊 Streamlit: http://localhost:8501" -ForegroundColor White
-          Write-Host "  💾 Database:  localhost:5433" -ForegroundColor White
+          Write-Host "Access Application:" -ForegroundColor Cyan
+          Write-Host "  🔗 API:       http://localhost:8000" -ForegroundColor White
+          Write-Host "  📊 Dashboard: http://localhost:8501" -ForegroundColor White
           Write-Host ""
-  
-  notify-failure:
-    name: ⚠️ Notify on Deployment Failure
-    runs-on: [self-hosted, windows, docker, local]
-    needs: deploy-dev
-    if: failure()
     
     steps:
       - name: Log failure
