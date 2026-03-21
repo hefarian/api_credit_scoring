@@ -21,8 +21,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 
-# port used by uvicorn
-EXPOSE 8005
+# port used by uvicorn (configurable via API_PORT env var)
+ENV API_PORT=8005
+EXPOSE ${API_PORT}
 
 # default command to run the API
-CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8005"]
+CMD uvicorn src.api:app --host 0.0.0.0 --port ${API_PORT}
