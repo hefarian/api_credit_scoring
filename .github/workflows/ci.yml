@@ -26,7 +26,7 @@ jobs:
     
     steps:
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
       - name: set up Python
         uses: actions/setup-python@v5
         with:
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
       - name: build API image
         run: |
           docker build -f Dockerfile.api -t pret-a-depenser/api:latest .
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
       - name: test docker-compose configuration
         run: |
           docker-compose config
