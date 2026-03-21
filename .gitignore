@@ -51,4 +51,4 @@ logs/
 
 # Documentation (tracked: *.md files, ignored: others like .txt, build files)
 Documentation/
-!Documentation/*.md
+Documentation/*.md
