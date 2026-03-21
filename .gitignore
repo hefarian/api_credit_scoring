@@ -28,6 +28,7 @@ greg/
 # Données
 data/*.csv
 data/*.zip
+!data/application_train.csv
 !data/.gitkeep
 
 # IDE

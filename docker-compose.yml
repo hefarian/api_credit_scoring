@@ -12,7 +12,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-credit_scoring}
       TZ: UTC
     ports:
-      - "${POSTGRES_PORT:-5435}:5432"
+      - "${POSTGRES_PORT:-5435}:5435"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql

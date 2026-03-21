@@ -1,0 +1,15 @@
+name: Deploy to DEV
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy DEV
+        run: |
+          cd /home/runner/work/api_credit_scoring/api_credit_scoring
+          docker-compose -f docker-compose.yml build
+          docker-compose -f docker-compose.yml up -d
