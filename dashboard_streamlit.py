@@ -99,8 +99,10 @@ except:
 # - Docker Compose local : http://api:8005 (default)
 # - Autre conteneur/VM : utiliser API_URL complet
 # - Localhost : http://localhost:8005
-# Note: Use 'or' to handle empty string values from .env files
-API_URL = os.getenv('API_URL') or f"http://{os.getenv('API_HOST', 'api')}:{os.getenv('API_PORT', 8005)}/predict"
+API_URL = os.getenv(
+    'API_URL',
+    f"http://{os.getenv('API_HOST', 'api')}:{os.getenv('API_PORT', 8005)}/predict"
+)
 
 # ============================================================================
 # FONCTIONS DE CONVERSION DE DATE

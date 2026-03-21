@@ -55,6 +55,5 @@ echo Services disponibles:
 echo   - API: http://localhost:8000
 echo   - Swagger: http://localhost:8000/docs
 echo   - Streamlit: http://localhost:8501
-echo   - Gradio: http://localhost:7860
 echo ========================================
 pause
