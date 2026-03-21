@@ -41,7 +41,7 @@ jobs:
         run: |
           cd "${{ github.workspace }}"
           Write-Host "Stopping old containers..." -ForegroundColor Yellow
-          docker-compose down
+          docker-compose --env-file .env.prod down
         continue-on-error: true
       
       - name: Pull latest main code
@@ -56,14 +56,14 @@ jobs:
         run: |
           cd "${{ github.workspace }}"
           Write-Host "Building Docker images for MAIN..." -ForegroundColor Yellow
-          docker-compose build
+          docker-compose --env-file .env.prod build
       
       - name: Start MAIN environment
         shell: powershell
         run: |
           cd "${{ github.workspace }}"
           Write-Host "Starting MAIN environment..." -ForegroundColor Yellow
-          docker-compose up -d
+          docker-compose --env-file .env.prod up -d
       
       - name: Wait for services
         shell: powershell
@@ -76,7 +76,7 @@ jobs:
         run: |
           cd "${{ github.workspace }}"
           Write-Host "Verifying services..." -ForegroundColor Cyan
-          docker-compose ps
+          docker-compose --env-file .env.prod ps
       
       - name: Health check
         shell: powershell
