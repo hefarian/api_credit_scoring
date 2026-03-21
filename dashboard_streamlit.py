@@ -95,7 +95,8 @@ except:
     THRESHOLD = 0.5
 
 # API endpoint
-API_URL = "http://api:8005/predict"
+API_PORT = os.getenv('API_PORT', 8005)
+API_URL = f"http://api:{API_PORT}/predict"
 
 # ============================================================================
 # FONCTIONS DE CONVERSION DE DATE
