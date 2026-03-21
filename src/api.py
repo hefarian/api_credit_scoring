@@ -216,10 +216,20 @@ try:
     _train_sample = pd.read_csv(Path(__file__).parent.parent / "data" / "application_train.csv", nrows=1)
     _numeric_columns = _train_sample.select_dtypes(include=["number"]).columns.tolist()
 except Exception:
-    # si le fichier d'entraînement est absent ou illisible on laisse la
-    # liste vide (l'API restera fonctionnelle mais fera moins de
-    # validations automatiques)
-    pass
+    # si le fichier d'entraînement est absent ou illisible (ex: CI/CD)
+    # on utilise une liste par défaut de colonnes numériques connues
+    # pour maintenir la validation des types en CI/CD
+    _numeric_columns = [
+        "SK_ID_CURR", "CNT_CHILDREN", "CNT_FAM_MEMBERS",
+        "AMT_INCOME_TOTAL", "AMT_CREDIT", "AMT_ANNUITY", "AMT_GOODS_PRICE",
+        "DAYS_BIRTH", "DAYS_EMPLOYED", "DAYS_REGISTRATION", "DAYS_ID_PUBLISH",
+        "OWN_CAR_AGE", "FLAG_MOBIL", "FLAG_EMP_PHONE",
+        "REGION_POPULATION_RELATIVE", "HOUR_APPR_PROCESS_START",
+        "EXT_SOURCE_1", "EXT_SOURCE_2", "EXT_SOURCE_3",
+        "DAYS_LAST_PHONE_CHANGE", "CREDIT_INCOME_PERC", "ANNUITY_INCOME_PERC",
+        "ANNUITY_CREDIT_PERC", "GOODS_CREDIT_PERC", "PAYMENT_RATE",
+        "AGE_YEARS", "EMPLOYED_YEARS"
+    ]
 
 # --- Chargement optionnel d'un encodeur catégoriel ---
 # Nous essayons de charger un artefact `encoder.pkl` situé dans `models/`.
