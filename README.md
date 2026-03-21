@@ -63,6 +63,56 @@ docker-compose up --build
 | **http://localhost:8005/docs** | 📖 Swagger UI | Tester les endpoints API | 8005 |
 | **http://localhost:8505** | 📊 **Streamlit** | Dashboard monitoring en temps réel | 8505 |
 
+#### 🔄 Gestion des environnements multiples (Dev/Prod)
+
+Si vous avez besoin de lancer **DEV et PROD simultanément** sur la même machine (par exemple pour tester):
+
+**Fichiers d'environnement disponibles:**
+- `.env.dev` - Environnement de développement local (ports 8005, 8505, 5435)
+- `.env.prod` - Environnement de production simulé (ports 8006, 8506, 5436)
+
+**Déploiement DEV (Linux/Mac):**
+```bash
+./deploy.sh dev
+# Conteneurs: dev_credit_scoring_*
+# Accès: http://localhost:8005 (API), http://localhost:8505 (Dashboard)
+```
+
+**Déploiement PROD (Linux/Mac):**
+```bash
+./deploy.sh prod
+# Conteneurs: prod_credit_scoring_*
+# Accès: http://localhost:8006 (API), http://localhost:8506 (Dashboard)
+```
+
+**Windows (PowerShell ou CMD):**
+```bash
+.\deploy.bat dev    # ou .\deploy.bat prod
+```
+
+**Ou manuellement avec docker compose:**
+```bash
+# Dev
+docker compose --env-file .env.dev --project-name credit-scoring-dev up -d --build
+
+# Prod
+docker compose --env-file .env.prod --project-name credit-scoring-prod up -d --build
+```
+
+**Arrêt d'un environnement:**
+```bash
+# Dev
+docker compose -p credit-scoring-dev down
+
+# Prod
+docker compose -p credit-scoring-prod down
+
+# Tous les conteneurs
+docker compose down
+```
+
+Les noms de conteneurs sont automatiquement préfixés (`dev_`, `prod_`) pour éviter les conflits.
+
 
 ### Option 2 : Services spécifiques uniquement
 
