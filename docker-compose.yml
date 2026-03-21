@@ -12,7 +12,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-credit_scoring}
       TZ: UTC
     ports:
-      - "${POSTGRES_PORT:-5435}:5435"
+      - "${POSTGRES_PORT:-5435}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -33,7 +33,9 @@ services:
       - "${API_PORT:-8005}:8005"
     environment:
       - GIT_PYTHON_REFRESH=quiet
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5435/${POSTGRES_DB:-credit_scoring}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-credit_scoring}
+      - ENVIRONMENT_NAME=${ENVIRONMENT_NAME:-DEV LOCAL}
+      - ENVIRONMENT_COLOR=${ENVIRONMENT_COLOR:-#FF0000}
     working_dir: /app
     command: uvicorn src.api:app --host 0.0.0.0 --port 8005 --reload
     volumes:
@@ -53,7 +55,7 @@ services:
       - "${STREAMLIT_PORT:-8505}:8505"
     environment:
       - GIT_PYTHON_REFRESH=quiet
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5435/${POSTGRES_DB:-credit_scoring}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-credit_scoring}
       - ENVIRONMENT_NAME=${ENVIRONMENT_NAME:-DEV LOCAL}
       - ENVIRONMENT_COLOR=${ENVIRONMENT_COLOR:-#FF0000}
     volumes:

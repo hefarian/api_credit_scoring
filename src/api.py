@@ -96,8 +96,12 @@ class PredictionResponse(BaseModel):
 
 
 # -------- définition de l'application FastAPI -----------------------------
+# Récupérer le nom de l'environnement depuis les variables d'environnement
+environment_name = os.getenv("ENVIRONMENT_NAME", "DEV LOCAL")
+app_title = f"Prêt à Dépenser - Scoring API ({environment_name})"
+
 app = FastAPI(
-    title="Prêt à Dépenser - Scoring API",
+    title=app_title,
     description="Service de prédiction de probabilité de défaut de paiement",
     version="1.0",
 )
