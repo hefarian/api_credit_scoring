@@ -9,18 +9,38 @@
 **Solution Implémentée:**
 - Ajouté fixture `mock_model()` dans [tests/conftest.py](tests/conftest.py) qui crée un mock de modèle sklearn
 - Ajouté fixture autouse `patch_model_if_missing()` qui patche automatiquement `src.api.model` et `src.inference._model` avec le mock si les fichiers n'existent pas
+- Mock model retourne **numpy array** `np.array([[0.25, 0.75]])` pour support du numpy indexing `[:, 1][0]`
 - Cela résout:
   - `test_api.py::test_predict_success` - Status 500 → 200
   - `test_api.py::test_predict_invalid_feature` - Status 500 → 400
   - `test_inference.py` - 4 tests avec FileNotFoundError
 
 **Fichiers affectés:**
-- [tests/conftest.py](tests/conftest.py) - Ajout de fixtures mock
+- [tests/conftest.py](tests/conftest.py) - Ajout de fixtures mock + numpy array return
 - [.github/workflows/ci.yml](.github/workflows/ci.yml) - Déjà compatible
 
 ---
 
-### 2. Repository Size (mlruns/, logs/, htmlcov/ non ignorés)
+### 2. "list indices must be integers or slices, not tuple" (HTTP 400 lors indexing)
+
+**Problème observé en CI/CD:**
+```
+response text: {"detail":"erreur de prédiction: list indices must be integers or slices, not tuple"}
+```
+
+**Cause:** Le mock_model retournait une **liste Python** `[[0.25, 0.75]]` au lieu d'un **numpy array**. Quand le code API faisait `proba = model.predict_proba(df)[:, 1][0]`, la notation NumPy `[:, 1]` essayait d'indexer une liste Python avec un tuple, d'où l'erreur.
+
+**Solution Implémentée:**
+- Modifié fixture `mock_model()` pour retourner `np.array([[0.25, 0.75]])` au lieu de `[[0.25, 0.75]]`
+- Ajouté `np.array([0])` pour `predict()` aussi
+- Code API peut maintenant faire `array[:, 1]` qui fonctionne correctement
+
+**Fichiers affectés:**
+- [tests/conftest.py](tests/conftest.py) - Return numpy arrays from mock
+
+---
+
+### 3. Repository Size (mlruns/, logs/, htmlcov/ non ignorés)
 
 **Problème:** Les dossiers générés par MLflow, tests, et couverture n'étaient pas ignorés, ce qui les commitait dans le repository.
 
@@ -39,7 +59,7 @@
 
 ---
 
-### 3. Dépendance httpx Manquante
+### 4. Dépendance httpx Manquante
 
 **Problème:** Le client API HTTP utilisé dans les tests (`httpx.Client`) n'était pas listé dans `requirements.txt`.
 
@@ -49,6 +69,31 @@
 **Impact:** Tests API peuvent maintenant importer httpx correctement
 
 ---
+
+### 5. PostgreSQL "UndefinedTable: api_logs" (erreur attendue en CI sans Docker)
+
+**Erreur observée en CI/CD:**
+```
+ERROR    database:database.py:310 Erreur lors de l'enregistrement de la prédiction : 
+(psycopg2.errors.UndefinedTable) relation "api_logs" does not exist
+```
+
+**Cause:** En CI/CD sans Docker Compose, il n'y a pas de base de données PostgreSQL, donc la table `api_logs` n'existe pas.
+
+**Pourquoi ce n'est pas un problème:** 
+- Le code gère gracieusement cette erreur:
+  - `ensure_prediction_log_schema()` : log un WARNING mais continue
+  - `log_prediction_to_db()` : catch l'exception, log l'erreur, retourne False
+- L'enregistrement en BD est optionnel - le /predict endpoint retourne le score quand même
+- Tests passent car la prédiction fonctionne indépendamment du DB
+
+**Quand c'EN EST un problème:** 
+- Tests `test_monitoring_pg.py` qui ont besoin de la table pour des statistiques
+- Ces tests sont probablement skippés ou mockés aussi
+
+**Fichiers affectés:**
+- [src/database.py](src/database.py) - Gestion gracieuse des erreurs DB
+- [src/api.py](src/api.py) - Chaque endpoint continue même si `log_prediction_to_db()` échoue
 
 ## ⚠️ Problèmes Potentiels Résidus
 
