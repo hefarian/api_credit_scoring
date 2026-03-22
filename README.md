@@ -1,7 +1,7 @@
 # Projet 08 - Scoring Credit : Pret a depenser
 
 **Auteur :** Gregory CRESPIN  
-**Date :** 06/03/2026  
+**Date :** 22/03/2026  
 **Version :** 2.0 (Production)
 
 ---
@@ -16,34 +16,98 @@ L'infrastructure inclut :
 - **Dashboard Streamlit** pour le suivi des performances
 - **Orchestration Docker** pour le deploiement
 
-## Arquitechture
+## Architecture
 
 ```
 PROJET08/
-├── Dockerfile                   # Image Docker (dependances)
-├── Dockerfile.api               # Image Docker pour l'API FastAPI
+├── .env                         # Variables d'environnement (actif)
+├── .env.dev                     # Variables d'environnement DEV
+├── .env.main                    # Variables d'environnement MAIN
+├── .env.prod                    # Variables d'environnement PROD
+├── .github/
+│   └── workflows/
+│       ├── ci.yml               # Pipeline CI (tests, linting, build)
+│       ├── deploy-dev.yml       # Déploiement branche dev
+│       └── deploy-main.yml      # Déploiement branche main
+├── dashboard_streamlit.py       # Dashboard Streamlit (monitoring + prédiction)
 ├── docker-compose.yml           # Orchestration (PostgreSQL, API, Streamlit)
+├── Dockerfile                   # Image Docker (dépendances de base)
+├── Dockerfile.api               # Image Docker pour l'API FastAPI
+├── Dockerfile.streamlit         # Image Docker pour Streamlit
 ├── .dockerignore                # Fichiers exclus du contexte Docker
-├── data/                        # Donnees brutes et preparees
+├── requirements.txt             # Dépendances Python
+├── data/                        # Données brutes et préparées
+│   ├── application_train.csv    # Données principales d'entraînement
+│   ├── application_test.csv     # Données principales de test
+│   ├── bureau.csv               # Données d'autres institutions
+│   ├── bureau_balance.csv       # Soldes bureau
+│   ├── credit_card_balance.csv  # Soldes cartes de crédit
+│   ├── installments_payments.csv# Paiements des versements
+│   ├── POS_CASH_balance.csv     # Soldes POS
+│   ├── previous_application.csv # Demandes précédentes
+│   ├── HomeCredit_columns_description.csv
+│   ├── X_train_prepared.csv     # Features préparées (train)
+│   ├── X_test_prepared.csv      # Features préparées (test)
+│   └── y_train_prepared.csv     # Labels d'entraînement
+├── db/
+│   └── init.sql                 # Script d'initialisation PostgreSQL
+├── Documentation/               # Documentation projet
+│   ├── CONFORMITE_MISSION.md    # Conformité avec la mission
+│   ├── GUIDE_DEPLOIEMENT_VM.md  # Guide de déploiement sur VM
+│   ├── API_DEPLOYMENT_GUIDE.md  # Guide de déploiement API
+│   ├── CI_CD_ISSUES.md          # Problèmes CI/CD connus
+│   ├── Mission.md               # Description de la mission
+│   └── presentation_finale.md   # Présentation finale
+├── models/                      # Modèles de production
+│   ├── best_model.pkl           # Modèle sérialisé (générique)
+│   ├── best_model_xgb.pkl       # Modèle XGBoost retenu
+│   └── optimal_threshold_xgb.json # Seuil optimal
 ├── notebooks/
-│   └── 05_deployment_and_monitoring.ipynb  # Dashboard de suivi production
+│   └── 05_deployment_and_monitoring.ipynb # Notebook déploiement & monitoring
+├── samples/                     # Exemples de requêtes pour tests
+│   ├── sample.json              # 10 profils exemples (chargés par Streamlit)
+│   ├── data_sample.json         # Échantillon de données
+│   ├── data_sample_men.json     # Échantillon hommes
+│   ├── data_sample_women.json   # Échantillon femmes
+│   └── SAMPLES.md               # Documentation des exemples
+├── scripts/
+│   └── deploy_local.sh          # Script de déploiement local
 ├── src/                         # Modules Python
-│   ├── api.py                   # API FastAPI pour les predictions
-│   ├── inference.py             # Logique d'inference du modele
+│   ├── __init__.py
+│   ├── api.py                   # API FastAPI pour les prédictions
+│   ├── database.py              # Connexion et gestion PostgreSQL
+│   ├── inference.py             # Logique d'inférence du modèle
 │   ├── monitoring.py            # Suivi des performances et drift
-│   ├── data_loader.py           # Chargement des donnees
-│   ├── preprocessing.py         # Preprocessing des donnees
+│   ├── monitoring_pg.py         # Monitoring via PostgreSQL
+│   ├── data_loader.py           # Chargement des données
+│   ├── preprocessing.py         # Preprocessing des données
 │   ├── feature_engineering.py   # Feature engineering
-│   └── metrics.py               # Metriques d'evaluation
+│   └── metrics.py               # Métriques d'évaluation
+├── tests/                       # Tests unitaires (pytest)
+│   ├── conftest.py              # Fixtures de test partagées
+│   ├── test_api.py              # Tests API
+│   ├── test_data_loader.py      # Tests chargement données
+│   ├── test_feature_engineering.py
+│   ├── test_feature_engineering_advanced.py
+│   ├── test_feature_importance.py
+│   ├── test_feature_importance_simplified.py
+│   ├── test_inference.py
+│   ├── test_inference_advanced.py
+│   ├── test_metrics.py
+│   ├── test_metrics_advanced.py
+│   ├── test_monitoring_pg.py
+│   ├── test_preprocessing.py
+│   ├── test_preprocessing_advanced.py
+│   └── test_utils.py
 ├── utils/                       # Utilitaires
-│   ├── business_cost.py         # Calcul du cout metier personnalise
+│   ├── business_cost.py         # Calcul du coût métier personnalisé
 │   └── feature_importance.py    # Analyse d'importance des features
-├── models/                      # Modeles de production
-│   ├── best_model_xgb.pkl       # Modele XGBoost retenu
-│   └── optimal_threshold_xgb.json
-├── tests/                       # Tests unitaires
-├── README.md                    # Documentation
-└── requirements.txt
+├── deploy.bat / deploy.sh       # Scripts de déploiement
+├── start.bat                    # Lancement rapide Windows
+├── reinit.bat                   # Réinitialisation de l'environnement
+├── run_tests.ps1                # Script de tests PowerShell
+├── run_tests_with_coverage.py   # Tests avec couverture de code
+└── README.md                    # Ce document
 ```
 
 ## Démarrage rapide
@@ -107,7 +171,8 @@ Ajouter les **GitHub Secrets** dans `Settings > Secrets and variables > Actions`
 ### Fichiers impliqués
 
 - `.github/workflows/ci.yml` : Tests et build Docker
-- `.github/workflows/cd-remote.yml` : Déploiement SSH sur serveur distant
+- `.github/workflows/deploy-dev.yml` : Déploiement branche dev
+- `.github/workflows/deploy-main.yml` : Déploiement branche main
 
 
 

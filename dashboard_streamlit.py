@@ -81,7 +81,7 @@ HISTORY_PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 # ============================================================================
 # IMPORT DES PARAMÈTRES DU MODÈLE ET FONCTIONS UTILITAIRES
 # ============================================================================
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import requests
 import time
 
@@ -707,6 +707,86 @@ elif page == "Prédiction":
         st.markdown("## Formulaire de Saisie - Prédiction de Crédit")
         st.markdown("Remplissez les informations du client pour obtenir une prédiction de crédit.")
         
+        # --- Chargement des profils exemples ---
+        sample_file = Path(__file__).parent / "samples" / "sample.json"
+        samples = []
+        if sample_file.exists():
+            with open(sample_file, "r", encoding="utf-8") as f:
+                samples = json.load(f)
+        
+        sample_options = ["-- Saisie manuelle --"] + [s["description"] for s in samples]
+        selected_sample = st.selectbox("📋 Liste d'exemples :", sample_options)
+        
+        # Déterminer les valeurs par défaut
+        if selected_sample != "-- Saisie manuelle --":
+            sd = next(s["data"] for s in samples if s["description"] == selected_sample)
+            days_b = sd.get("DAYS_BIRTH", -15000)
+            days_e = sd.get("DAYS_EMPLOYED", -500)
+            dflt_birth = date.today() + timedelta(days=days_b)
+            dflt_empl = date.today() + timedelta(days=days_e) if days_e < 0 else date(2000, 1, 1)
+            dflt = {
+                "sk_id": sd.get("SK_ID_CURR", 100003),
+                "gender": sd.get("CODE_GENDER", "M"),
+                "contract": sd.get("NAME_CONTRACT_TYPE", "Cash loans"),
+                "car": sd.get("FLAG_OWN_CAR", "N"),
+                "realty": sd.get("FLAG_OWN_REALTY", "N"),
+                "children": sd.get("CNT_CHILDREN", 1),
+                "fam": float(sd.get("CNT_FAM_MEMBERS", 2)),
+                "family_status": sd.get("NAME_FAMILY_STATUS", "Single / not married"),
+                "housing": sd.get("NAME_HOUSING_TYPE", "House / apartment"),
+                "income": float(sd.get("AMT_INCOME_TOTAL", 60000)),
+                "credit": float(sd.get("AMT_CREDIT", 350000)),
+                "annuity": float(sd.get("AMT_ANNUITY", 18000)),
+                "goods": float(sd.get("AMT_GOODS_PRICE", 350000)),
+                "education": sd.get("NAME_EDUCATION_TYPE", "Secondary / secondary special"),
+                "occupation": sd.get("OCCUPATION_TYPE", "Sales staff"),
+                "birth": dflt_birth,
+                "empl": dflt_empl,
+                "ext1": float(sd.get("EXT_SOURCE_1", 0.55)),
+                "ext2": float(sd.get("EXT_SOURCE_2", 0.50)),
+                "ext3": float(sd.get("EXT_SOURCE_3", 0.45)),
+            }
+        else:
+            dflt = {
+                "sk_id": 100003, "gender": "M", "contract": "Cash loans",
+                "car": "N", "realty": "N", "children": 1, "fam": 2.0,
+                "family_status": "Single / not married",
+                "housing": "House / apartment", "income": 60000.0,
+                "credit": 350000.0, "annuity": 18000.0, "goods": 350000.0,
+                "education": "Secondary / secondary special",
+                "occupation": "Sales staff", "birth": date(1984, 6, 1),
+                "empl": date(2023, 8, 1), "ext1": 0.55, "ext2": 0.50, "ext3": 0.45,
+            }
+        
+        # Listes d'options (avec valeurs utilisées par les samples)
+        gender_opts = ["M", "F"]
+        contract_opts = ["Cash loans", "Revolving loans"]
+        yn_opts = ["Y", "N"]
+        family_opts = [
+            "Married", "Single / not married", "Widow", "Widowed",
+            "Separated", "Divorced", "Civil marriage"
+        ]
+        housing_opts = [
+            "House / apartment", "With parents", "Municipal apartment",
+            "Rented apartment", "Office apartment", "Co-op apartment"
+        ]
+        education_opts = [
+            "Lower secondary", "Secondary / secondary special",
+            "Incomplete higher", "Higher education", "Academic degree"
+        ]
+        occupation_opts = [
+            "Sales staff", "Managers", "Laborers", "Core staff", "Drivers",
+            "Accountants", "Medicine staff", "High skill tech staff",
+            "Low-skill Laborers", "IT staff", "Business owner",
+            "Cleaning staff", "Pensioner", "Technicians", "Unknown"
+        ]
+        
+        def safe_index(opts, val, fallback=0):
+            try:
+                return opts.index(val)
+            except ValueError:
+                return fallback
+        
         with st.form("prediction_form"):
             # Colonne 1 : Informations Personnelles
             col1, col2 = st.columns(2)
@@ -716,7 +796,7 @@ elif page == "Prédiction":
                 
                 sk_id_curr = st.number_input(
                     "Client ID",
-                    value=100003,
+                    value=dflt["sk_id"],
                     min_value=1,
                     step=1,
                     help="Identifiant unique du client"
@@ -724,25 +804,29 @@ elif page == "Prédiction":
                 
                 code_gender = st.radio(
                     "Genre",
-                    options=["M", "F"],
+                    options=gender_opts,
+                    index=safe_index(gender_opts, dflt["gender"]),
                     horizontal=True
                 )
                 
                 name_contract_type = st.radio(
                     "Type de Contrat",
-                    options=["Cash loans", "Revolving loans"],
+                    options=contract_opts,
+                    index=safe_index(contract_opts, dflt["contract"]),
                     horizontal=False
                 )
                 
                 flag_own_car = st.radio(
                     "Possède une Voiture",
-                    options=["Y", "N"],
+                    options=yn_opts,
+                    index=safe_index(yn_opts, dflt["car"]),
                     horizontal=True
                 )
                 
                 flag_own_realty = st.radio(
                     "Possède un Bien Immobilier",
-                    options=["Y", "N"],
+                    options=yn_opts,
+                    index=safe_index(yn_opts, dflt["realty"]),
                     horizontal=True
                 )
                 
@@ -753,38 +837,26 @@ elif page == "Prédiction":
                     "Nombre d'Enfants",
                     min_value=0,
                     max_value=10,
-                    value=1
+                    value=dflt["children"]
                 )
                 
                 cnt_fam_members = st.number_input(
                     "Nombre de Membres du Foyer",
-                    value=2.0,
+                    value=dflt["fam"],
                     min_value=1.0,
                     step=0.5
                 )
                 
                 name_family_status = st.selectbox(
                     "Statut Familial",
-                    options=[
-                        "Married",
-                        "Single / not married",
-                        "Widow",
-                        "Separated",
-                        "Civil marriage"
-                    ],
-                    index=1
+                    options=family_opts,
+                    index=safe_index(family_opts, dflt["family_status"], 1)
                 )
                 
                 name_housing_type = st.selectbox(
                     "Type de Logement",
-                    options=[
-                        "House / apartment",
-                        "With parents",
-                        "Municipal apartment",
-                        "Rented apartment",
-                        "Office apartment",
-                        "Co-op apartment"
-                    ]
+                    options=housing_opts,
+                    index=safe_index(housing_opts, dflt["housing"])
                 )
             
             with col2:
@@ -792,7 +864,7 @@ elif page == "Prédiction":
                 
                 amt_income = st.number_input(
                     "Revenu Annuel (EUR)",
-                    value=60000.0,
+                    value=dflt["income"],
                     min_value=0.0,
                     step=1000.0,
                     help="Revenu brut annuel du client"
@@ -800,7 +872,7 @@ elif page == "Prédiction":
                 
                 amt_credit = st.number_input(
                     "Montant du Crédit (EUR)",
-                    value=350000.0,
+                    value=dflt["credit"],
                     min_value=0.0,
                     step=10000.0,
                     help="Montant total du crédit demandé"
@@ -808,7 +880,7 @@ elif page == "Prédiction":
                 
                 amt_annuity = st.number_input(
                     "Annuité (EUR)",
-                    value=18000.0,
+                    value=dflt["annuity"],
                     min_value=0.0,
                     step=1000.0,
                     help="Montant annuel de remboursement"
@@ -816,7 +888,7 @@ elif page == "Prédiction":
                 
                 amt_goods_price = st.number_input(
                     "Prix des Biens (EUR)",
-                    value=350000.0,
+                    value=dflt["goods"],
                     min_value=0.0,
                     step=10000.0,
                     help="Prix des biens à financer"
@@ -827,30 +899,14 @@ elif page == "Prédiction":
                 
                 name_education_type = st.selectbox(
                     "Niveau d'Éducation",
-                    options=[
-                        "Lower secondary",
-                        "Secondary / secondary special",
-                        "Incomplete higher",
-                        "Higher education",
-                        "Academic degree"
-                    ],
-                    index=1
+                    options=education_opts,
+                    index=safe_index(education_opts, dflt["education"], 1)
                 )
                 
                 occupation_type = st.selectbox(
                     "Occupation",
-                    options=[
-                        "Sales staff",
-                        "Managers",
-                        "Laborers",
-                        "Core staff",
-                        "Drivers",
-                        "Accountants",
-                        "Medicine staff",
-                        "High skill tech staff",
-                        "Low-skill Laborers",
-                        "Unknown"
-                    ]
+                    options=occupation_opts,
+                    index=safe_index(occupation_opts, dflt["occupation"])
                 )
                 
                 # Dates
@@ -858,13 +914,13 @@ elif page == "Prédiction":
                 
                 birth_date = st.date_input(
                     "Date de Naissance",
-                    value=date(1984, 6, 1),
+                    value=dflt["birth"],
                     help="Format: YYYY-MM-DD"
                 )
                 
                 employment_date = st.date_input(
                     "Date de Début d'Emploi",
-                    value=date(2023, 8, 1),
+                    value=dflt["empl"],
                     help="Format: YYYY-MM-DD"
                 )
             
@@ -877,7 +933,7 @@ elif page == "Prédiction":
                     "EXT_SOURCE_1",
                     min_value=0.0,
                     max_value=1.0,
-                    value=0.55,
+                    value=dflt["ext1"],
                     step=0.01
                 )
             
@@ -886,7 +942,7 @@ elif page == "Prédiction":
                     "EXT_SOURCE_2",
                     min_value=0.0,
                     max_value=1.0,
-                    value=0.50,
+                    value=dflt["ext2"],
                     step=0.01
                 )
             
@@ -895,7 +951,7 @@ elif page == "Prédiction":
                     "EXT_SOURCE_3",
                     min_value=0.0,
                     max_value=1.0,
-                    value=0.45,
+                    value=dflt["ext3"],
                     step=0.01
                 )
             

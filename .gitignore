@@ -56,3 +56,7 @@ logs/
 
 # Documentation - Local only (not tracked by git)
 Documentation/
+
+# Misc
+.ignore
+.virtual_documents/
