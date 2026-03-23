@@ -1531,7 +1531,9 @@ elif page == "Historique":
 # PAGE 5 : À PROPOS
 # ============================================================================
 elif page == "À propos":
-    st.markdown("""
+    api_port = os.getenv("API_PORT", "8005")
+    streamlit_port = os.getenv("STREAMLIT_PORT", "8505")
+    st.markdown(f"""
     ## Dashboard de Monitoring
     
     ### Description
@@ -1548,9 +1550,9 @@ elif page == "À propos":
     - **Modèle** : XGBoost (optimal_threshold_xgb.json)
     
     ### Endpoints connexes
-    - **API REST** : http://localhost:8005
-    - **Interface Streamlit** : http://localhost:8505
-    - **Dashboard Streamlit**: http://localhost:8505
+    - **API REST** : http://localhost:{api_port}
+    - **Interface Streamlit** : http://localhost:{streamlit_port}
+    - **Dashboard Streamlit**: http://localhost:{streamlit_port}
     
     ### Auteur
     Gregory CRESPIN - Mars 2026
