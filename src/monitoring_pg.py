@@ -347,8 +347,9 @@ def load_api_logs(last_n_hours: int = 24, limit: Optional[int] = None) -> Option
             logger.warning("No logs found in database")
             return None
         
-        # Convertir timestamp en datetime
+        # Convertir timestamp en datetime et normaliser en heure locale (Europe/Paris)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['timestamp'] = normalize_timestamps_to_local_naive(df['timestamp'])
 
         for column in ["cpu_usage_pct", "gpu_usage_pct", "gpu_memory_mb", "compute_device"]:
             if column not in df.columns:

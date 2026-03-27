@@ -82,6 +82,7 @@ HISTORY_PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 # IMPORT DES PARAMÈTRES DU MODÈLE ET FONCTIONS UTILITAIRES
 # ============================================================================
 from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
 import requests
 import time
 
@@ -1533,4 +1534,4 @@ st.markdown("""
 <div style='text-align: center; color: #5FC2BA; font-size: 12px;'>
     Projet 08 - Credit Scoring - Production Dashboard | Mis à jour : {timestamp}
 </div>
-""".format(timestamp=pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")), unsafe_allow_html=True)
+""".format(timestamp=datetime.now(ZoneInfo("Europe/Paris")).strftime("%Y-%m-%d %H:%M:%S")), unsafe_allow_html=True)
