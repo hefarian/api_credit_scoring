@@ -253,7 +253,7 @@ def make_prediction_streamlit(
 # - layout = "wide" = utiliser la largeur complète de l'écran
 # - initial_sidebar_state = "expanded" = afficher la barre latérale par défaut
 st.set_page_config(
-    page_title="Credit Scoring Monitor",
+    page_title="Credit Scoring Monitor - TEST CI/CD",
     layout="wide",
     initial_sidebar_state="expanded"
 )
