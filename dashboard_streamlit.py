@@ -420,7 +420,7 @@ st.sidebar.markdown("### Navigation")
 # Permet de naviguer entre différentes pages du dashboard
 page = st.sidebar.radio(
     "Sélectionnez une page",
-    ["Dashboard", "Prédiction", "Drift Detection", "Historique", "À propos"]
+    ["Dashboard", "Prédiction", "Drift Detection", "Historique"]
 )
 
 # ============================================================================
@@ -1526,37 +1526,6 @@ elif page == "Historique":
     
     except Exception as e:
         st.error(f"Erreur lors du chargement de l'historique : {str(e)}")
-
-# ============================================================================
-# PAGE 5 : À PROPOS
-# ============================================================================
-elif page == "À propos":
-    api_port = os.getenv("API_PORT", "8005")
-    streamlit_port = os.getenv("STREAMLIT_PORT", "8505")
-    st.markdown(f"""
-    ## Dashboard de Monitoring
-    
-    ### Description
-    Ce dashboard fournit une vue en temps réel du modèle de scoring credit XGBoost.
-    
-    ### Fonctionnalités
-    - **KPIs** : Visualisation des statistiques principales
-    - **Drift Detection** : Alerte automatique en cas de dérive des données
-    - **Historique** : Accès à l'historique complet des prédictions
-    - **Auto-refresh** : Mise à jour automatique toutes les 5 secondes
-    
-    ### Données sources
-    - **Logs API** : `logs/api.log` (JSON, mis à jour en temps réel)
-    - **Modèle** : XGBoost (optimal_threshold_xgb.json)
-    
-    ### Endpoints connexes
-    - **API REST** : http://localhost:{api_port}
-    - **Interface Streamlit** : http://localhost:{streamlit_port}
-    - **Dashboard Streamlit**: http://localhost:{streamlit_port}
-    
-    ### Auteur
-    Gregory CRESPIN - Mars 2026
-    """)
 
 # Footer
 st.markdown("---")
